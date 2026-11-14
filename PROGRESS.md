@@ -5,8 +5,7 @@ tested end to end in a real browser. Steps 1 to 8 still have their own branches 
 
 ## Round 4 (14 Nov 2026, night): Supabase accounts and Orbloom on phones
 
-Work branch: `claude/great-davinci-gccflf`. **Not merged into `main` yet**: `main` keeps round 3 (commit `c839d1e`)
-until you say it is OK.
+Merged into `main` on 14 Nov 2026. Round 3 (with the old local server) is commit `c839d1e` if you ever need it back.
 
 Your answers: accounts + data + AI on Supabase, a new free Supabase project, flight surgeons sign up with an invite
 code, and phones install Orbloom from a link.
