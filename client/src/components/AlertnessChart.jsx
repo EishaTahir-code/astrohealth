@@ -33,10 +33,10 @@ export default function AlertnessChart({ tests, forDoctor = false }) {
               <XAxis dataKey="day" tick={{ fontSize: 12, fill: 'var(--muted)' }} interval="preserveStartEnd" minTickGap={24} />
               <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: 'var(--muted)' }} />
               <Tooltip
-                contentStyle={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8 }}
+                contentStyle={{ background: 'var(--panel-solid)', border: '1px solid var(--line-strong)', borderRadius: 10, color: 'var(--ink)' }}
                 formatter={(v, name) => (name === 'score' ? [`${v} / 100`, 'Alertness'] : [v, name])}
               />
-              <Line type="monotone" dataKey="score" stroke="var(--accent)" strokeWidth={2} dot={{ r: 3 }} isAnimationActive={false} />
+              <Line type="monotone" dataKey="score" stroke="var(--accent)" strokeWidth={2} dot={{ r: 3, fill: 'var(--lime)', strokeWidth: 0 }} isAnimationActive={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>

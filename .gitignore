@@ -38,3 +38,6 @@ desktop.ini
 .vscode/*
 !.vscode/settings.json
 .idea/
+
+# ---- Demo server data (sync store, family relay, signing key) ----
+server/data/

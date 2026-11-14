@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import GardenPlan from '../components/GardenPlan'
 import { Logo } from '../components/Icons'
 import { ConnectionStatus } from '../components/Shell'
 import { DEMO_ACCOUNT, ROLE_LABEL, login, useSession } from '../lib/auth'
+import art from '../assets/art/night-garden.webp'
 
 // First screen of the app. Astronauts and flight surgeons sign in here.
 // want: the role needed for the page the person tried to open (optional).
@@ -12,10 +12,15 @@ export default function SignIn({ want }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault()
-    const res = login(email, password, role)
+    if (busy) return
+    setBusy(true)
+    setError('')
+    const res = await login(email, password, role)
+    setBusy(false)
     if (!res.ok) {
       setError(res.error)
       return
@@ -40,10 +45,8 @@ export default function SignIn({ want }) {
   return (
     <div className="signin">
       <div className="signin-art">
-        <GardenPlan className="signin-plan" />
-        <p className="signin-caption">
-          Every crew member tends a bed in the shared garden. Check in, rest well, and watch it bloom.
-        </p>
+        <img src={art} alt="A meadow of glowing white wildflowers at night under a planet's edge, with small specimen labels." />
+        <p className="signin-caption">Every crew member tends a bed of light. Check in, rest well, and watch it bloom.</p>
       </div>
 
       <div className="signin-panel">
@@ -51,8 +54,9 @@ export default function SignIn({ want }) {
           <div className="brand brand-lg">
             <Logo size={40} /> <span>Orbloom</span>
           </div>
+          <span className="tag">Health companion for long missions</span>
           <h1 className="signin-title">Welcome back to the garden</h1>
-          <p className="muted">A calm health companion for long missions. Everything is saved on this device first.</p>
+          <p className="muted">Everything is saved on this device first, so it works even with no ground link.</p>
 
           {want && user && user.role !== want && (
             <p className="alert info small" role="status">
@@ -78,28 +82,22 @@ export default function SignIn({ want }) {
             </div>
             <div className="field">
               <label htmlFor="password">Password</label>
-              <input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
             {error && (
               <p role="alert" className="form-error">
                 {error}
               </p>
             )}
-            <button className="btn big wide" type="submit">
-              Sign in as {ROLE_LABEL[role].toLowerCase()}
+            <button className="btn big wide" type="submit" disabled={busy}>
+              {busy ? 'Signing in…' : `Sign in as ${ROLE_LABEL[role].toLowerCase()}`}
             </button>
           </form>
 
           <div className="demo-hint small">
             <p>
               Demo account: <strong>{DEMO_ACCOUNT[role].email}</strong>, password <strong>{DEMO_ACCOUNT[role].password}</strong>.
-              Fake login for the demo, not real security.
+              {role === 'astronaut' && ' Leo and Sara can sign in too (leo.okafor@… and sara.lindqvist@…, same password).'}
             </p>
             <button type="button" className="link-btn" onClick={fillDemo}>
               Fill in the demo account

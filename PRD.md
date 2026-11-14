@@ -1,4 +1,4 @@
-# OrbitGarden: Product Requirements Document (PRD)
+# Orbloom: Product Requirements Document (PRD)
 
 An offline-first astronaut health, well-being, and crew-support companion.
 
@@ -49,7 +49,7 @@ Short daily check-in: mood, stress, energy, sleep quality, perceived workload, l
 Manual entry or sync of approved measurements: blood pressure, heart rate, body temperature, sleep duration and quality, blood sugar, other mission-approved indicators. Shows current values, personal baselines, trends, color-coded status, AI explanations and next steps.
 
 ### 6.5 AI assistants (two AIs)
-OrbitGarden uses **two separate AIs**, each in its own tab. Details are in TECH.md.
+Orbloom uses **two separate AIs**, each in its own tab. Details are in TECH.md.
 - **AI 1: Health Trends Assistant.** Explains graphs in simple language, answers questions like "What does this blood-pressure trend mean?", gives general self-care suggestions and a doctor-ready summary.
 - **AI 2: Medication Assistant.** Knows the specific medicines astronauts are provided in their spacecraft (from an approved medicine list). Answers only from that list.
 
@@ -117,4 +117,4 @@ Triggers: abnormal blood pressure, heart rate or temperature; severe sleep disru
 Daily check-in completion, early red-flag detection, sleep consistency, reaction-time performance, family-message activity, greenhouse-task completion, crew-support check-ins, doctor response time, AI satisfaction, offline reliability.
 
 ## 11. One-line summary
-OrbitGarden is an offline-first, privacy-preserving astronaut health platform with a shared crew garden, a personal astronaut app for physical and mental well-being, and a secure doctor dashboard for monitoring trends and responding to red-flag alerts.
+Orbloom is an offline-first, privacy-preserving astronaut health platform with a shared crew garden, a personal astronaut app for physical and mental well-being, and a secure doctor dashboard for monitoring trends and responding to red-flag alerts.

@@ -6,11 +6,10 @@ import { askAi } from '../lib/api'
 import { STATUS_LABEL, summarize } from '../lib/health'
 import { confidenceFor, explainOffline } from '../lib/fallbackHealth'
 import { DISCLAIMER } from '../lib/safety'
-import { ME } from '../data/crew'
 
 // AI 1: Health Trends Assistant. Uses only this astronaut's own readings.
-export default function HealthAssistant() {
-  const readings = useLiveQuery(() => db.readings.where('userId').equals(ME).toArray(), [])
+export default function HealthAssistant({ me }) {
+  const readings = useLiveQuery(() => db.readings.where('userId').equals(me).toArray(), [me])
   if (!readings) return <p>Loading…</p>
 
   const summary = summarize(readings)

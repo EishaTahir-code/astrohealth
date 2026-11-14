@@ -1,39 +1,62 @@
-// Local search of medicines.json. Works fully offline, no AI needed.
+// Local search of medicines.json (the ISS medical kit list). Works fully offline, no AI needed.
 // (The server has a copy of this logic in server/med-search.js.)
 import data from '../data/medicines.json'
 import { ESCALATE_MESSAGE, mentionsRedFlagSymptom } from './safety'
 
 export const MEDICINES = data.medicines
 export const MED_NOTICE = data.notice
+export const MED_SOURCE = data.source
 
-const STOP = new Set(['what', 'which', 'with', 'have', 'there', 'can', 'take', 'the', 'for', 'and', 'medicine', 'medicines', 'medication', 'tablet', 'tablets', 'pill', 'pills', 'help', 'does', 'about', 'any', 'good', 'use', 'used', 'you', 'our', 'onboard', 'board', 'spacecraft', 'list', 'feel', 'feeling', 'got', 'get', 'should', 'something'])
+const STOP = new Set('what which with have having there can could take taking the for and medicine medicines medication medications tablet tablets pill pills help does about any good best use used you your our onboard board spacecraft station list feel feeling got get should something tell need kit pack where how many much would will give this that from into are was were really very bad some have when been anything other also just like dose doses'.split(' '))
 
 function words(text) {
-  return text.toLowerCase().replace(/[^a-z0-9\s-]/g, ' ').split(/\s+/).filter((w) => w.length > 2 && !STOP.has(w))
+  return String(text || '').toLowerCase().replace(/[^a-z0-9\s'-]/g, ' ').split(/\s+/).filter((w) => w.length > 2 && !STOP.has(w))
 }
 
+// Returns matching medicines, best match first.
 export function searchMedicines(question, list = MEDICINES) {
-  const ws = words(question)
+  const q = String(question || '').toLowerCase()
+  const ws = words(q)
   if (!ws.length) return []
-  return list.filter((m) => {
-    const names = [m.name, ...m.aliases].join(' ').toLowerCase()
-    const uses = words(m.usedFor.join(' '))
-    return ws.some((w) => names.includes(w) || uses.some((u) => u.length > 3 && (u.startsWith(w) || w.startsWith(u))))
-  })
+  return list
+    .map((m) => {
+      let score = 0
+      const names = [m.name, ...m.aliases].join(' ').toLowerCase()
+      if (ws.some((w) => w.length > 3 && names.includes(w))) score += 10
+      for (const use of m.usedFor) {
+        const u = use.toLowerCase()
+        if (q.includes(u)) score += 5
+        const uw = words(u)
+        if (ws.some((w) => uw.some((x) => x.length > 3 && (x.startsWith(w) || w.startsWith(x))))) score += 2
+      }
+      if (score && m.access === 'crew') score += 1
+      return { m, score }
+    })
+    .filter((s) => s.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map((s) => s.m)
 }
 
-export const NOT_ON_LIST =
-  "I don't have that medicine on the spacecraft list. Please contact the flight surgeon."
+export const NOT_ON_LIST = "I don't have that medicine on the spacecraft list. Please contact the flight surgeon."
 
 export function describe(m) {
-  return `${m.name}\nUsed for: ${m.usedFor.join(', ')}.\nDose: ${m.dosage}\nWarnings: ${m.warnings.join(' ')}`
+  return [
+    `${m.name}: ${m.strength}, ${m.route.toLowerCase()} ${m.unit}.`,
+    `Used for: ${m.usedFor.join(', ')}.`,
+    m.comments ? `List says: ${m.comments}` : null,
+    `Possible side effects: ${m.sideEffects}.`,
+    `Stored in: ${m.pack}, location ${m.location}.`,
+    m.access === 'crew' ? 'Crew self-care pack. Check with the flight surgeon if unsure.' : 'Used only when the flight surgeon directs it.',
+  ]
+    .filter(Boolean)
+    .join('\n')
 }
 
 export function answerOffline(question) {
   if (mentionsRedFlagSymptom(question)) return ESCALATE_MESSAGE
-  const found = searchMedicines(question)
+  const found = searchMedicines(question).slice(0, 3)
   if (!found.length) {
-    return `${NOT_ON_LIST}\n\nMedicines on the list: ${MEDICINES.map((m) => m.name).join(', ')}.`
+    return `${NOT_ON_LIST}\n\nTry asking about a symptom (for example "headache" or "motion sickness") or a medicine name.`
   }
   return `From the spacecraft list (${MED_NOTICE}):\n\n${found.map(describe).join('\n\n')}`
 }
