@@ -1,10 +1,12 @@
 // Family Space helpers: contacts, saving messages (encrypted), photos and gentle prompts.
 // Messages are saved on this device first and wait in a queue until the ground link opens.
-import { db, newId } from './db'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db, getSetting, newId, setSetting } from './db'
 import { seal } from './secure'
 import { requestSync } from './sync'
 
-// FAKE family members for the demo crew (the server has the same list in server/family.js).
+// FAKE family members for the demo crew. Real astronauts add the people they want to write to.
+// (Replies in this demo are pre-written and come from Supabase about 20 seconds after sending.)
 export const FAMILY = {
   a1: [
     { id: 'lin', name: 'Mum (Lin)' },
@@ -26,17 +28,31 @@ export const FAMILY = {
   a8: [{ id: 'ivan', name: 'Ivan' }, { id: 'sofia', name: 'Sofia' }],
 }
 
-export function contactsFor(crewId) {
-  return FAMILY[crewId] ?? []
+// React hook: the people this astronaut can write to (demo family plus anyone they added).
+export function useContacts(crewId) {
+  const added = useLiveQuery(() => getSetting(`familyContacts:${crewId}`, []), [crewId])
+  if (!added) return null
+  return [...(FAMILY[crewId] ?? []), ...added]
 }
 
-export async function queueMessage({ userId, contact, text, photo }) {
-  const c = contactsFor(userId).find((x) => x.id === contact)
+// Adds someone from home. Their name stays on this device and is sent only with messages to them.
+export async function addContact(crewId, name) {
+  const clean = name.trim().replace(/\s+/g, ' ').slice(0, 60)
+  if (!clean) return null
+  const list = await getSetting(`familyContacts:${crewId}`, [])
+  const existing = [...(FAMILY[crewId] ?? []), ...list].find((c) => c.name.toLowerCase() === clean.toLowerCase())
+  if (existing) return existing
+  const contact = { id: `c-${newId().slice(0, 12)}`, name: clean }
+  await setSetting(`familyContacts:${crewId}`, [...list, contact])
+  return contact
+}
+
+export async function queueMessage({ userId, contact, contactName, text, photo }) {
   await db.family.add({
     uid: newId(),
     userId,
     contact,
-    contactName: c?.name ?? contact,
+    contactName: contactName ?? contact,
     direction: 'out',
     text: await seal(text),
     photo: photo ? await seal(photo) : null,

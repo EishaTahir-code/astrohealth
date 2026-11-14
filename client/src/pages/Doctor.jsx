@@ -10,25 +10,35 @@ import { detectDecline } from '../lib/alertness'
 import { ALERT_KIND_LABEL } from '../lib/alerts'
 import { askAi, FALLBACK_REASONS } from '../lib/api'
 import { requestSync } from '../lib/sync'
-import { CREW, crewName, firstName } from '../data/crew'
+import { crewName, crewPerson, firstName, useCrew } from '../data/crew'
 
 // Doctor dashboard. Shows health readings, alertness, alerts, shared notes and messages only.
 // It never loads check-ins, moods, private notes, journals or family messages.
 // For check-ins it sees only how many days the astronaut checked in (shared by their device).
 export default function Doctor({ page, doctor }) {
+  const crew = useCrew()
   let content
   if (page === 'alerts') content = <AlertsPage doctor={doctor} />
   else if (page === 'log') content = <AccessLog />
-  else if (CREW.some((c) => c.id === page)) content = <Profile id={page} doctor={doctor} />
+  else if (crew.some((c) => c.id === page)) content = <Profile id={page} doctor={doctor} />
   else content = <CrewList doctor={doctor} />
   return <div className="page">{content}</div>
 }
 
+// Only records about astronauts in this doctor's crew (real sign-ups, or the demo crew for demo accounts).
+function useCrewIds() {
+  const crew = useCrew()
+  return crew.map((c) => c.id).join(',')
+}
+
 function useCrewData() {
+  const ids = useCrewIds()
   return useLiveQuery(async () => {
+    const mine = new Set(ids.split(','))
     const [readings, tests, alerts, statuses] = await Promise.all([db.readings.toArray(), db.reactionTests.toArray(), db.alerts.toArray(), db.crewStatus.toArray()])
-    return { readings, tests, alerts, statuses }
-  }, [])
+    const ours = (r) => mine.has(r.userId)
+    return { readings: readings.filter(ours), tests: tests.filter(ours), alerts: alerts.filter(ours), statuses: statuses.filter(ours) }
+  }, [ids])
 }
 
 function overallFor(id, data) {
@@ -43,6 +53,7 @@ function overallFor(id, data) {
 }
 
 function CrewList({ doctor }) {
+  const crew = useCrew()
   const data = useCrewData()
   if (!data) return <p className="muted">Loading…</p>
   const openAlerts = data.alerts.filter((a) => !a.reviewed)
@@ -64,8 +75,11 @@ function CrewList({ doctor }) {
           <a className="btn small-btn" href="#/doctor/alerts">Review alerts</a>
         </div>
       )}
+      {!crew.length && (
+        <p className="card quiet">No astronauts have joined yet. When an astronaut signs up, their profile appears here.</p>
+      )}
       <div className="grid grid-3">
-        {CREW.map((p) => {
+        {crew.map((p) => {
           const o = overallFor(p.id, data)
           const status = data.statuses.find((s) => s.userId === p.id)
           return (
@@ -117,9 +131,9 @@ function Profile({ id, doctor }) {
     ])
     return { readings, tests, alerts, shared, notes, messages, status }
   }, [id])
-  const person = CREW.find((c) => c.id === id)
+  const person = crewPerson(id) ?? { role: 'Crew member' }
 
-  // Audit log: record that this doctor opened this profile (synced to the server's log too).
+  // Audit log: record that this doctor opened this profile (synced to the log in Supabase too).
   useEffect(() => {
     db.auditLog.add({ uid: newId(), doctor: doctor.email, astronautId: id, at: Date.now(), synced: false }).then(requestSync).catch(() => {})
   }, [id, doctor.email])
@@ -270,7 +284,11 @@ function AlertList({ alerts, doctor, showName = false }) {
 
 function AlertsPage({ doctor }) {
   const [show, setShow] = useState('open')
-  const alerts = useLiveQuery(() => db.alerts.reverse().sortBy('createdAt'), [])
+  const ids = useCrewIds()
+  const alerts = useLiveQuery(async () => {
+    const mine = new Set(ids.split(','))
+    return (await db.alerts.reverse().sortBy('createdAt')).filter((a) => mine.has(a.userId))
+  }, [ids])
   if (!alerts) return <p className="muted">Loading…</p>
   const list = alerts.filter((a) => (show === 'open' ? !a.reviewed : true))
   return (
@@ -385,13 +403,17 @@ function Messages({ id, messages, doctor }) {
 }
 
 function AccessLog() {
-  const log = useLiveQuery(() => db.auditLog.reverse().sortBy('at'), [])
+  const ids = useCrewIds()
+  const log = useLiveQuery(async () => {
+    const mine = new Set(ids.split(','))
+    return (await db.auditLog.reverse().sortBy('at')).filter((e) => mine.has(e.astronautId))
+  }, [ids])
   return (
     <>
       <header className="page-head">
         <span className="tag">[ Security ]</span>
         <h1>Access log</h1>
-        <p>Every time a flight surgeon opens an astronaut&apos;s profile, it is recorded here and on the server.</p>
+        <p>Every time a flight surgeon opens an astronaut&apos;s profile, it is recorded here and in the mission database (Supabase).</p>
       </header>
       <section className="card">
         {!log ? (

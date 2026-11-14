@@ -4,17 +4,16 @@ import { STATUS_LABEL, summarize } from '../lib/health'
 import { confidenceFor, explainOffline } from '../lib/fallbackHealth'
 import { DISCLAIMER } from '../lib/safety'
 import { useLink } from '../lib/connection'
-import { useSession } from '../lib/auth'
+import { useCloudReady, useSession } from '../lib/auth'
 
 // Why the live AI is not answering, in plain words (shown above the chat).
-function aiNotice(link, user) {
+function aiNotice(link, cloud) {
   if (!link.online) return 'You are offline, so answers are pre-written. They still explain your own readings.'
-  if (link.oldServer) return 'An older copy of the Orbloom server is answering. Close the other terminal running Orbloom and start "npm run dev" again.'
-  if (link.server === false) return 'The app server is not running, so answers are pre-written. Start it with "npm run dev".'
-  if (user && !user.token) return 'You signed in while offline, so the AI is paused. Use “Reconnect” at the top of the page.'
-  if (link.aiProblem === 'missing') return 'No AI key is set, so answers are pre-written. Add your Groq key to the .env.health file.'
-  if (link.aiProblem === 'example') return 'The .env.health file still has the example text instead of your Groq key, so answers are pre-written.'
-  if (link.aiProblem === 'refused') return 'Groq did not accept the key in .env.health. Check that it is copied correctly, or make a new key.'
+  if (link.server === false) return 'The ground link (Supabase) cannot be reached right now, so answers are pre-written.'
+  if (cloud === false) return 'You signed in while offline, so the AI is paused. Use “Reconnect” at the top of the page.'
+  if (link.aiProblem === 'missing') return 'No AI key is set yet, so answers are pre-written. The app owner adds the Groq key in Supabase (Edge Functions, Secrets, GROQ_API_KEY).'
+  if (link.aiProblem === 'example') return 'The AI key in Supabase is still example text, so answers are pre-written.'
+  if (link.aiProblem === 'refused') return 'Groq did not accept the AI key saved in Supabase. Make a new Groq key and save it as the GROQ_API_KEY secret.'
   return null
 }
 
@@ -22,10 +21,11 @@ function aiNotice(link, user) {
 export default function HealthAssistantPanel({ readings, request }) {
   const link = useLink()
   const user = useSession()
+  const cloud = useCloudReady(user?.email)
   const summary = summarize(readings)
   const counts = summary.filter((m) => m.count).map((m) => m.count)
   const confidence = confidenceFor(counts.length ? Math.min(...counts) : 0)
-  const notice = aiNotice(link, user)
+  const notice = aiNotice(link, cloud)
 
   async function ask(question) {
     const res = await askAi('health', { question, summary })

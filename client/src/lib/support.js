@@ -7,7 +7,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, dayKey } from './db'
 import { scoreGarden } from './garden'
-import { CREW } from '../data/crew'
+import { useCrew } from '../data/crew'
 import { requestSync } from './sync'
 
 export const SUPPORT_MODES = {
@@ -59,10 +59,11 @@ export async function publishCrewStatus(userId) {
 // Everyone's bed for the crew garden. Uses check-ins saved on this device when there are any
 // (the demo crew), otherwise the status each crewmate shared through sync.
 export function useCrewGarden() {
+  const crew = useCrew()
   return useLiveQuery(async () => {
     const [checkIns, statuses] = await Promise.all([db.checkIns.toArray(), db.crewStatus.toArray()])
     const out = []
-    for (const person of CREW) {
+    for (const person of crew) {
       const mine = checkIns.filter((c) => c.userId === person.id)
       const shared = statuses.find((s) => s.userId === person.id)
       let garden
@@ -73,7 +74,7 @@ export function useCrewGarden() {
       out.push({ person, garden, supportOk: supportAllowed(support.mode, support.pausedUntil) })
     }
     return out
-  }, [])
+  }, [crew])
 }
 
 function stageInfo(stage) {

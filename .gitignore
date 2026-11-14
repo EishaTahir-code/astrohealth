@@ -39,5 +39,9 @@ desktop.ini
 !.vscode/settings.json
 .idea/
 
-# ---- Demo server data (sync store, family relay, signing key) ----
-server/data/
+# ---- Old local server data (the server was replaced by Supabase) ----
+server/
+
+# ---- Supabase CLI local files ----
+supabase/.temp/
+supabase/.branches/

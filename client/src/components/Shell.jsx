@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react'
 import Guide from './Guide'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Icon, Logo } from './Icons'
-import { login, logout, ROLE_LABEL } from '../lib/auth'
+import { login, logout, ROLE_LABEL, useCloudReady } from '../lib/auth'
 import { useLink } from '../lib/connection'
 import { startAutoSync, stopAutoSync, syncNow, useSyncStatus } from '../lib/sync'
 import { db, getSetting, setSetting } from '../lib/db'
-import { CREW } from '../data/crew'
+import { useCrew } from '../data/crew'
 
 // [id, label, icon, href, group]
 const NAV = {
@@ -24,31 +24,37 @@ const NAV = {
   doctor: [
     ['crew', 'Crew overview', 'crew', '#/doctor', null],
     ['alerts', 'Alerts', 'alerts', '#/doctor/alerts', null],
-    ...CREW.map((c) => [c.id, c.name, 'person', `#/doctor/${c.id}`, 'Astronauts']),
+    // (one link per astronaut is added here, see AppShell)
     ['log', 'Access log', 'log', '#/doctor/log', 'Records'],
     ['garden', 'Crew garden', 'garden', '#/garden', 'Records'],
   ],
 }
 
-function useBadges(user) {
+function useBadges(user, crewIds) {
   return (
     useLiveQuery(async () => {
       if (user.role === 'doctor') {
-        return { alerts: await db.alerts.filter((a) => !a.reviewed).count() }
+        const mine = new Set(crewIds.split(','))
+        return { alerts: await db.alerts.filter((a) => !a.reviewed && mine.has(a.userId)).count() }
       }
       const me = user.crewId
       return {
         family: await db.family.where('userId').equals(me).filter((m) => m.direction === 'in' && !m.read).count(),
         care: await db.careMessages.where('userId').equals(me).filter((m) => m.from === 'doctor' && !m.read).count(),
       }
-    }, [user.role, user.crewId]) ?? {}
+    }, [user.role, user.crewId, crewIds]) ?? {}
   )
 }
 
 // Signed-in layout: sidebar (top bar on phones) + page content.
 export default function AppShell({ user, active, children }) {
-  const items = NAV[user.role] ?? []
-  const badges = useBadges(user)
+  const crew = useCrew()
+  const items =
+    user.role === 'doctor'
+      ? [...NAV.doctor.slice(0, 2), ...crew.map((c) => [c.id, c.name, 'person', `#/doctor/${c.id}`, 'Astronauts']), ...NAV.doctor.slice(2)]
+      : NAV[user.role] ?? []
+  const cloud = useCloudReady(user.email)
+  const badges = useBadges(user, crew.map((c) => c.id).join(','))
 
   const [guideOpen, setGuideOpen] = useState(false)
 
@@ -121,7 +127,9 @@ export default function AppShell({ user, active, children }) {
           <div className="who">
             <span className="who-name">{user.name}</span>
             <span className="who-role">
-              {ROLE_LABEL[user.role]} (demo){user.token ? '' : ', signed in offline'}
+              {ROLE_LABEL[user.role]}
+              {user.demo ? ' (demo)' : ''}
+              {cloud === false ? ', signed in offline' : ''}
             </span>
           </div>
           <button type="button" className="signout" onClick={() => { logout(); window.location.hash = '#/' }}>
@@ -168,7 +176,7 @@ export function ConnectionStatus({ compact = false, showSync = false }) {
     <div className={`conn ${compact ? 'compact' : ''}`} aria-live="polite">
       <span>
         <i className={`dot ${link.open ? 'on' : 'off'}`} aria-hidden="true" />
-        {!link.online ? 'Offline, saving on this device' : link.oldServer ? 'Older server answering' : link.blackout ? 'Ground link down (practice)' : link.server ? 'Ground link open' : link.server === null ? 'Checking link…' : 'App server not reachable'}
+        {!link.online ? 'Offline, saving on this device' : link.blackout ? 'Ground link down (practice)' : link.server ? 'Ground link open' : link.server === null ? 'Checking link…' : 'Ground link not reachable'}
       </span>
       <span>
         <i className={`dot ${link.ai ? 'on' : 'off'}`} aria-hidden="true" />
@@ -192,26 +200,19 @@ export function ConnectionStatus({ compact = false, showSync = false }) {
 // Shown at the top of every signed-in page when something blocks the AI and syncing.
 function LinkBanners({ user }) {
   const link = useLink()
+  const cloud = useCloudReady(user.email)
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
-  if (link.oldServer) {
-    return (
-      <div className="banner warn page-banner" role="status">
-        <Icon name="help" />
-        <p>An older copy of the Orbloom server is answering (probably another folder still running). Close that terminal, then run “npm run dev” again in this folder.</p>
-      </div>
-    )
-  }
-  // Signed in while offline, and now the server can be reached: one step to reconnect.
-  if (!user.token && link.server && link.online) {
+  // Signed in while offline (or the sign-in ran out), and now the ground link is open: one step to reconnect.
+  if (cloud === false && link.server && link.online) {
     async function reconnect(e) {
       e.preventDefault()
       setBusy(true)
       const res = await login(user.email, password, user.role)
       setBusy(false)
-      if (res.ok && res.session.token) {
+      if (res.ok && res.session.online) {
         setPassword('')
         syncNow()
       } else setError(res.ok ? 'Still offline. Try again in a moment.' : res.error)

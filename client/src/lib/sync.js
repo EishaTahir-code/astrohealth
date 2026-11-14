@@ -1,13 +1,14 @@
-// Background sync: sends this device's new shareable records to the server and brings back
-// what changed elsewhere. Runs every 30 seconds while signed in, when the internet comes back,
-// and right after something new is saved.
+// Background sync: sends this device's new shareable records to Supabase and brings back
+// what changed elsewhere. The privacy rules in Supabase decide what each person may send and see.
+// Runs every 30 seconds while signed in, when the internet comes back, and right after something
+// new is saved.
 //
 // Never synced: check-ins, moods, private notes, greenhouse notes. Family messages go through
 // their own relay (below), only when the ground link is open.
 import { useSyncExternalStore } from 'react'
 import { db, getSetting, setSetting, upsertByUid } from './db'
-import { apiFamilyInbox, apiFamilySend, apiSync } from './api'
-import { currentUser } from './auth'
+import { cloudReady, currentUser, refreshCrew } from './auth'
+import { supabase } from './supabase'
 import { seal, unseal } from './secure'
 import { checkServer } from './connection'
 
@@ -47,10 +48,21 @@ export function useSyncStatus() {
 }
 
 let running = null
+let again = false
 
+// Starts a sync. If one is already running, another one follows right after it,
+// so something saved during a sync is not left waiting for the next 30-second round.
 export function syncNow() {
-  running ??= doSync().finally(() => {
+  if (running) {
+    again = true
+    return running
+  }
+  running = doSync().finally(() => {
     running = null
+    if (again) {
+      again = false
+      syncNow()
+    }
   })
   return running
 }
@@ -67,45 +79,16 @@ async function doSync() {
   if (!user) return
   if (!navigator.onLine) return set({ phase: 'waiting', message: 'No internet. Everything is saved on this device.' })
   if (await getSetting('blackout', false)) return set({ phase: 'waiting', message: 'Ground link down (practice mode). Changes wait on this device.' })
-  if (!user.token) {
+  if (!(await cloudReady())) {
     return set({ phase: 'waiting', message: user.expired ? 'Sign-in ran out. Use Reconnect to keep syncing.' : 'Signed in offline. Use Reconnect at the top to sync.' })
   }
-  if (!(await checkServer())) return set({ phase: 'waiting', message: 'App server not reachable. Changes wait on this device.' })
+  if (!(await checkServer(15000))) return set({ phase: 'waiting', message: 'Ground link not reachable. Changes wait on this device.' })
 
   set({ phase: 'syncing', message: 'Syncing…' })
   try {
-    const push = {}
-    for (const table of TABLES[user.role] ?? []) {
-      const rows = await db[table].filter((r) => shouldSend(user, table, r)).toArray()
-      if (rows.length) push[table] = rows.map(({ id: _id, synced: _s, reviewPending: _r, ...rest }) => rest)
-    }
-    const seqKey = `syncSeq:${user.email}`
-    const since = await getSetting(seqKey, 0)
-    const res = await apiSync(push, since)
-
-    const accepted = new Set(res.accepted)
-    const rejected = new Set(res.rejected ?? [])
-    for (const [table, rows] of Object.entries(push)) {
-      for (const r of rows) {
-        if (accepted.has(r.uid)) await upsertByUid(table, { uid: r.uid, synced: true, reviewPending: false })
-        // The server refused it (for example a review of demo data that only exists on this device):
-        // keep it here and stop retrying.
-        else if (rejected.has(r.uid)) await upsertByUid(table, { uid: r.uid, synced: true, reviewPending: false, localOnly: true })
-      }
-    }
-
-    let newItems = 0
-    for (const table of PULL_TABLES) {
-      for (const row of res.pulled?.[table] ?? []) {
-        const { _seq: _q, ...rest } = row
-        const existed = await db[table].where('uid').equals(rest.uid).count()
-        if (!existed && table === 'careMessages') newItems++
-        await upsertByUid(table, { ...rest, synced: true, reviewPending: false })
-      }
-    }
-    await setSetting(seqKey, res.seq)
-    if (user.role === 'astronaut') newItems += await syncFamily(user)
-
+    await pushRecords(user)
+    const newItems = (await pullRecords(user)) + (user.role === 'astronaut' ? await syncFamily(user) : 0)
+    await refreshCrew(Boolean(user.demo))
     set({ phase: 'done', lastSyncAt: Date.now(), message: '', newItems })
     if (newItems) notify(newItems)
   } catch (err) {
@@ -114,42 +97,139 @@ async function doSync() {
   }
 }
 
-// Sends queued family messages and collects replies.
-async function syncFamily(user) {
-  const queued = await db.family.where('userId').equals(user.crewId).filter((m) => m.status === 'queued').toArray()
-  if (queued.length) {
-    const messages = []
-    for (const m of queued) {
-      messages.push({ uid: m.uid, to: m.contact, text: await unseal(m.text), photo: m.photo ? await unseal(m.photo) : null, createdAt: m.createdAt })
+// A local record in the shape Supabase stores: who it is about (crew_id) and the record itself (data).
+function toRow(table, r) {
+  const { id: _id, synced: _s, reviewPending: _r, localOnly: _l, ...data } = r
+  return { uid: r.uid, kind: table, crew_id: table === 'auditLog' ? r.astronautId : r.userId, data }
+}
+
+const isRuleError = (error) => error && (error.code === '42501' || error.code === 'P0001' || error.code === '23514' || /row-level security|violates/i.test(error.message ?? ''))
+
+async function markSent(table, uid, localOnly = false) {
+  await upsertByUid(table, { uid, synced: true, reviewPending: false, ...(localOnly ? { localOnly: true } : {}) })
+}
+
+async function pushRecords(user) {
+  for (const table of TABLES[user.role] ?? []) {
+    const rows = await db[table].filter((r) => shouldSend(user, table, r)).toArray()
+    if (!rows.length) continue
+
+    // A flight surgeon's alert review goes through review_alert (only the review can change).
+    if (user.role === 'doctor' && table === 'alerts') {
+      for (const r of rows) {
+        const { data, error } = await supabase.rpc('review_alert', { alert_uid: r.uid, is_reviewed: Boolean(r.reviewed), note: r.reviewNote ?? '' })
+        if (error && !isRuleError(error)) throw error
+        // No such alert online (for example demo data that only exists on this device): keep it here.
+        if (error || !data) await markSent(table, r.uid, true)
+        else await upsertByUid(table, { ...data, synced: true, reviewPending: false })
+      }
+      continue
     }
-    const res = await apiFamilySend(messages)
-    for (const uid of res.sent) {
-      const m = queued.find((q) => q.uid === uid)
-      if (m) await db.family.update(m.id, { status: 'sent', sentAt: res.sentAt })
+
+    const batch = rows.map((r) => toRow(table, r))
+    const { error } = await supabase.from('records').upsert(batch, { onConflict: 'uid' })
+    if (!error) {
+      for (const r of rows) await markSent(table, r.uid)
+      continue
+    }
+    if (!isRuleError(error)) throw error
+    // Something in the batch was refused: send one by one and keep refused ones on this device.
+    for (const row of batch) {
+      const one = await supabase.from('records').upsert(row, { onConflict: 'uid' })
+      if (one.error && !isRuleError(one.error)) throw one.error
+      await markSent(table, row.uid, Boolean(one.error))
     }
   }
+}
 
-  const seqKey = `familySeq:${user.email}`
-  const inbox = await apiFamilyInbox(await getSetting(seqKey, 0))
+// Saves one record that came from Supabase. If the same record was changed on this device and
+// not sent yet (for example a review saved while this sync was running), the local version is kept:
+// it is sent next, and the new online version comes back after. One transaction, so a change
+// made at the same moment cannot be overwritten.
+function applyPulled(table, record) {
+  return db.transaction('rw', db[table], async () => {
+    const local = await db[table].where('uid').equals(record.uid).first()
+    if (local && local.synced === false) return 'kept'
+    if (local) await db[table].update(local.id ?? local.uid, record)
+    else await db[table].add(record)
+    return local ? 'updated' : 'added'
+  })
+}
+
+// Brings back everything this person may see that changed since the last sync.
+async function pullRecords(user) {
+  const seqKey = `cloudSeq:${user.email}`
+  // A small overlap, in case two changes were saved at the same moment. Saving twice is harmless.
+  let since = Math.max(0, (await getSetting(seqKey, 0)) - 25)
+  let newItems = 0
+  for (let page = 0; page < 20; page++) {
+    const { data, error } = await supabase.from('records').select('uid, kind, data, seq').gt('seq', since).order('seq').limit(500)
+    if (error) throw error
+    for (const row of data ?? []) {
+      if (!PULL_TABLES.includes(row.kind)) continue
+      since = Math.max(since, row.seq)
+      const result = await applyPulled(row.kind, { ...row.data, uid: row.uid, synced: true, reviewPending: false })
+      if (result === 'added' && row.kind === 'careMessages' && row.data.from === 'doctor' && user.role === 'astronaut') newItems++
+    }
+    if ((data ?? []).length < 500) break
+  }
+  await setSetting(seqKey, since)
+  return newItems
+}
+
+// Sends queued family messages and collects replies (the family relay in Supabase).
+async function syncFamily(user) {
+  const queued = await db.family.where('userId').equals(user.crewId).filter((m) => m.status === 'queued').toArray()
+  for (const m of queued) {
+    const row = {
+      uid: m.uid,
+      direction: 'out',
+      contact: m.contact,
+      contact_name: m.contactName || m.contact,
+      body: await unseal(m.text),
+      photo: m.photo ? await unseal(m.photo) : null,
+    }
+    const { error } = await supabase.from('family_messages').upsert(row, { onConflict: 'uid', ignoreDuplicates: true })
+    if (error) {
+      if (!isRuleError(error)) throw error
+      continue // refused (for example a photo that is too big): it stays queued on this device
+    }
+    await db.family.update(m.id, { status: 'sent', sentAt: Date.now() })
+  }
+
+  const cursorKey = `familyCursor:${user.email}`
+  const cursor = await getSetting(cursorKey, '1970-01-01T00:00:00Z')
+  // Look back two minutes as well, then skip the ones already here.
+  const from = new Date(new Date(cursor).getTime() - 120000).toISOString()
+  const { data, error } = await supabase
+    .from('family_messages')
+    .select('uid, contact, contact_name, body, photo, demo_reply, reply_to, deliver_at')
+    .eq('direction', 'in')
+    .gt('deliver_at', from)
+    .order('deliver_at')
+    .limit(200)
+  if (error) throw error
   let added = 0
-  for (const m of inbox.messages) {
+  let latest = cursor
+  for (const m of data ?? []) {
+    if (m.deliver_at > latest) latest = m.deliver_at
     if (await db.family.where('uid').equals(m.uid).count()) continue
     await db.family.add({
       uid: m.uid,
       userId: user.crewId,
-      contact: m.from,
-      contactName: m.fromName,
+      contact: m.contact,
+      contactName: m.contact_name,
       direction: 'in',
-      text: await seal(m.text),
-      photo: null,
+      text: await seal(m.body),
+      photo: m.photo ? await seal(m.photo) : null,
       status: 'received',
       read: false,
-      demo: Boolean(m.demo),
-      createdAt: m.createdAt,
+      demo: Boolean(m.demo_reply),
+      createdAt: new Date(m.deliver_at).getTime(),
     })
     added++
   }
-  await setSetting(seqKey, inbox.seq)
+  await setSetting(cursorKey, latest)
   return added
 }
 

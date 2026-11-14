@@ -1,15 +1,14 @@
 // Connection status, shown on every screen (the PRD says sync status must always be visible).
 //
-// "Ground link open" = the device is online AND the app server answers AND the astronaut has not
-// switched on practice mode ("Pretend the ground link is down" in Settings).
+// "Ground link open" = the device is online AND Supabase (the online part of Orbloom) answers AND
+// the astronaut has not switched on practice mode ("Pretend the ground link is down" in Settings).
 import { useEffect, useSyncExternalStore } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { getStatus } from './api'
 import { db } from './db'
 
-// oldServer: an older copy of the Orbloom server is answering (it lacks sign-in and sync).
 // aiProblem: why the AI is off ('missing', 'example' or 'refused' key), or null.
-const state = { online: navigator.onLine, server: null, ai: null, oldServer: false, aiProblem: null }
+const state = { online: navigator.onLine, server: null, ai: null, aiProblem: null }
 let snapshot = { ...state }
 const listeners = new Set()
 
@@ -18,13 +17,17 @@ function emit() {
   listeners.forEach((l) => l())
 }
 
-export async function checkServer() {
+let lastCheck = 0
+
+// maxAge: reuse a successful check from the last few milliseconds instead of asking again.
+export async function checkServer(maxAge = 0) {
+  if (maxAge && state.server && navigator.onLine && Date.now() - lastCheck < maxAge) return true
   const s = navigator.onLine ? await getStatus() : null
+  lastCheck = Date.now()
   state.online = navigator.onLine
   state.server = Boolean(s)
-  state.oldServer = Boolean(s) && (s.app !== 'orbloom' || (s.version ?? 0) < 3)
-  state.ai = s && !state.oldServer ? Boolean(s.ai?.health) : false
-  state.aiProblem = s && !state.oldServer ? s.ai?.problem ?? null : null
+  state.ai = s ? Boolean(s.ai?.health) : false
+  state.aiProblem = s ? s.ai?.problem ?? null : null
   emit()
   return state.server
 }
@@ -33,10 +36,11 @@ let started = false
 function start() {
   if (started) return
   started = true
-  checkServer()
-  setInterval(checkServer, 20000)
-  window.addEventListener('online', checkServer)
-  window.addEventListener('offline', checkServer)
+  const check = () => checkServer()
+  check()
+  setInterval(check, 30000)
+  window.addEventListener('online', check)
+  window.addEventListener('offline', check)
 }
 
 function subscribe(listener) {
@@ -51,5 +55,5 @@ export function useLink() {
   useEffect(() => {
     start()
   }, [])
-  return { ...s, blackout, open: s.online && s.server === true && !s.oldServer && !blackout }
+  return { ...s, blackout, open: s.online && s.server === true && !blackout }
 }

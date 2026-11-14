@@ -9,7 +9,7 @@ import { detectDecline } from '../lib/alertness'
 import { recordSupportCheckin, useCrewGarden } from '../lib/support'
 import { plantAlerts, plantInfo } from '../lib/greenhouse'
 import { unseal } from '../lib/secure'
-import { CREW, firstName } from '../data/crew'
+import { crewPerson, firstName } from '../data/crew'
 
 const DECLINE_LABEL = { none: 'Not enough tests yet', green: 'Usual level', yellow: 'Lower than usual', red: 'Large drop' }
 
@@ -116,7 +116,7 @@ export default function Today({ user }) {
             <h2 id="bed-h">Your garden bed</h2>
             <StatusPill status={garden.status}>{garden.label}</StatusPill>
           </div>
-          <FlowerBed stage={garden.stage} color={CREW.find((c) => c.id === me)?.flower} label={`Your flower bed: ${garden.label}`} />
+          <FlowerBed stage={garden.stage} color={crewPerson(me)?.flower} label={`Your flower bed: ${garden.label}`} />
           <p className="muted small flush">
             {garden.stage === 'empty' ? 'Your bed is empty. Your first check-in plants the seeds.' : `${garden.note}. Check-ins, good sleep and greenhouse care help it grow.`}
           </p>
