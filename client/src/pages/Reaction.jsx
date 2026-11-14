@@ -14,7 +14,7 @@ export default function Reaction() {
   const tests = useLiveQuery(() => db.reactionTests.where('userId').equals(ME).toArray(), [])
 
   return (
-    <div className="grid grid-2" style={{ alignItems: 'start' }}>
+    <div className="grid grid-2 top">
       <Game />
       {tests ? <AlertnessChart tests={tests} /> : <p>Loading…</p>}
     </div>
@@ -92,52 +92,42 @@ function Game() {
     }
   }
 
-  const area = {
-    idle: { bg: 'var(--surface-2)', text: 'Press start when you are ready' },
-    waiting: { bg: 'var(--surface-2)', text: 'Wait for it…' },
-    go: { bg: 'var(--ok)', text: 'Tap now!' },
-    done: { bg: 'var(--surface-2)', text: 'Done' },
+  const text = {
+    idle: 'Press start when you are ready',
+    waiting: 'Wait for it…',
+    go: 'Tap now!',
+    done: 'Done',
   }[phase]
+  const active = phase === 'waiting' || phase === 'go'
 
   return (
     <section className="card">
-      <h2>Alertness game</h2>
+      <h2>Reaction test</h2>
       <p className="muted small">
-        When the box turns green and says &ldquo;Tap now!&rdquo;, tap it (or press the space bar) as fast as you can.
-        {` ${TRIALS} rounds, about 30 seconds.`}
+        When the bud opens into a flower and says &ldquo;Tap now!&rdquo;, tap it (or press the space bar) as fast as you
+        can.{` ${TRIALS} rounds, about 30 seconds.`}
       </p>
 
       <button
         type="button"
-        onPointerDown={phase === 'waiting' || phase === 'go' ? tap : undefined}
+        className="reaction-pad"
+        data-phase={phase}
+        onPointerDown={active ? tap : undefined}
         onKeyDown={(e) => {
-          if ((e.key === ' ' || e.key === 'Enter') && (phase === 'waiting' || phase === 'go')) {
+          if ((e.key === ' ' || e.key === 'Enter') && active) {
             e.preventDefault()
             tap()
           }
         }}
         aria-live="assertive"
-        style={{
-          width: '100%',
-          minHeight: 180,
-          border: '2px solid var(--line)',
-          borderRadius: 12,
-          background: area.bg,
-          color: phase === 'go' ? '#fff' : 'var(--ink)',
-          font: 'inherit',
-          fontSize: '1.5rem',
-          fontWeight: 700,
-          cursor: phase === 'waiting' || phase === 'go' ? 'pointer' : 'default',
-          touchAction: 'manipulation',
-          userSelect: 'none',
-        }}
       >
-        {area.text}
+        <PadFlower open={phase === 'go'} />
+        <span className="pad-text">{text}</span>
       </button>
 
-      <div className="row" style={{ justifyContent: 'space-between', marginTop: '0.75rem' }}>
+      <div className="row spread spaced">
         <span className="muted small">
-          {phase === 'waiting' || phase === 'go' ? `Round ${round} of ${TRIALS}` : ''} {message}
+          {active ? `Round ${round} of ${TRIALS}` : ''} {message}
         </span>
         {(phase === 'idle' || phase === 'done') && (
           <button className="btn" type="button" onClick={start}>
@@ -147,7 +137,7 @@ function Game() {
       </div>
 
       {result && (
-        <div className="card quiet" style={{ marginTop: '1rem' }} role="status">
+        <div className="card quiet spaced" role="status">
           <h3>Your result</h3>
           <table>
             <tbody>
@@ -157,12 +147,24 @@ function Game() {
               <tr><td><strong>Alertness score</strong></td><td className="num"><strong>{result.alertnessScore} / 100</strong></td></tr>
             </tbody>
           </table>
-          <p className="muted small" style={{ margin: '0.5rem 0 0' }}>Saved on this device and added to your graph.</p>
+          <p className="muted small spaced-sm">Saved on this device and added to your graph.</p>
         </div>
       )}
-      <p className="disclaimer" style={{ marginTop: '1rem' }}>
+      <p className="disclaimer spaced">
         A simple demo test, not a medical or fitness-for-duty assessment.
       </p>
     </section>
+  )
+}
+
+// A closed bud while waiting; it opens into a flower when it is time to tap.
+function PadFlower({ open }) {
+  return (
+    <svg className="pad-flower" viewBox="-40 -40 80 80" aria-hidden="true" focusable="false">
+      {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => (
+        <ellipse key={a} className="pad-petal" cx="0" cy={open ? -19 : -9} rx={open ? 9 : 6} ry={open ? 16 : 12} transform={`rotate(${a})`} />
+      ))}
+      <circle r={open ? 10 : 7} className="pad-heart" />
+    </svg>
   )
 }

@@ -18,7 +18,7 @@ Rules you must always follow:
 - Never go beyond approved protocols. Never diagnose.
 - If the person describes worrying symptoms, tell them to contact the flight surgeon.
 - Say the list is: "${notice}".
-- Keep answers under 120 words, plain and calm. Do not add a disclaimer; the app shows one.
+- Keep answers under 120 words, plain and calm. Write plain text only: no markdown, no bold, no headings, no tables. Do not add a disclaimer; the app shows one.
 
 SPACECRAFT MEDICINE LIST (JSON):
 ${JSON.stringify(medicines, null, 1)}`;

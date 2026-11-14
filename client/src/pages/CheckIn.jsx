@@ -20,7 +20,7 @@ export default function CheckIn() {
   )
 
   return (
-    <div className="grid grid-2" style={{ alignItems: 'start' }}>
+    <div className="grid grid-2 top">
       {existing === undefined ? (
         <div className="card">Loading…</div>
       ) : (
@@ -85,7 +85,7 @@ function CheckInForm({ existing, today }) {
         </label>
         <textarea id="notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
       </div>
-      <div className="row">
+      <div className="row form-actions">
         <button className="btn" type="submit" disabled={missing.length > 0}>
           {hasEntry ? 'Update check-in' : 'Save check-in'}
         </button>
@@ -93,7 +93,7 @@ function CheckInForm({ existing, today }) {
           <span className="muted small">Still to answer: {missing.map((f) => f.label.toLowerCase()).join(', ')}</span>
         )}
       </div>
-      <div aria-live="polite" style={{ marginTop: '0.75rem' }}>
+      <div aria-live="polite" className="spaced">
         {saved && <div className="toast">Check-in saved on this device.</div>}
       </div>
     </form>
@@ -104,35 +104,38 @@ function RecentCheckIns({ recent }) {
   return (
     <section className="card quiet">
       <h2>Your last 7 check-ins</h2>
+      <p className="muted small">Each answer is from 1 to 5.</p>
       {!recent?.length ? (
         <p className="muted">No check-ins yet. Your first one will plant a seed in your crew garden bed.</p>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Mood</th>
-              <th>Stress</th>
-              <th>Energy</th>
-              <th>Sleep</th>
-              <th>Work</th>
-            </tr>
-          </thead>
-          <tbody>
-            {recent.map((c) => (
-              <tr key={c.id}>
-                <td>{c.date.slice(5)}</td>
-                <td className="num">{c.mood}</td>
-                <td className="num">{c.stress}</td>
-                <td className="num">{c.energy}</td>
-                <td className="num">{c.sleepQuality}</td>
-                <td className="num">{c.workload}</td>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Mood</th>
+                <th>Stress</th>
+                <th>Energy</th>
+                <th>Sleep</th>
+                <th>Work</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {recent.map((c) => (
+                <tr key={c.id}>
+                  <td>{c.date.slice(5)}</td>
+                  <td className="num">{c.mood}</td>
+                  <td className="num">{c.stress}</td>
+                  <td className="num">{c.energy}</td>
+                  <td className="num">{c.sleepQuality}</td>
+                  <td className="num">{c.workload}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
-      <p className="muted small" style={{ marginTop: '0.75rem' }}>
+      <p className="muted small spaced">
         Saved only on this device for now. Not synced: syncing is not built in this demo.
       </p>
     </section>

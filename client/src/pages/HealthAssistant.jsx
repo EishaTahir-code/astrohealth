@@ -24,38 +24,42 @@ export default function HealthAssistant() {
   }
 
   return (
-    <div className="grid grid-2" style={{ alignItems: 'start' }}>
+    <div className="grid grid-2 top">
       <section className="card">
-        <h2>Health assistant</h2>
-        <p className="muted small">Ask about your graphs in plain words. It only sees your own readings.</p>
+        <h2>Ask a question</h2>
+        <p className="muted small">Try one of the suggestions or type your own question.</p>
         <Chat
+          tone="lavender"
+          icon="ai"
           ask={ask}
           placeholder="For example: what does my blood pressure trend mean?"
           quickQuestions={['Explain my graphs', 'How is my sleep?', 'Write a summary for my doctor']}
           intro="Hi. I can explain your health graphs in simple words. I can't diagnose anything, and I'll tell you when something should go to the flight surgeon."
         />
-        <p className="disclaimer" style={{ marginTop: '1rem' }}>{DISCLAIMER}</p>
+        <p className="disclaimer spaced">{DISCLAIMER}</p>
       </section>
 
       <section className="card quiet">
         <h2>What the assistant sees</h2>
         <p className="muted small">Only this summary is sent, never your notes or check-ins.</p>
-        <table>
-          <thead>
-            <tr><th>Measurement</th><th>Latest</th><th>Trend</th><th>Status</th></tr>
-          </thead>
-          <tbody>
-            {summary.map((m) => (
-              <tr key={m.type}>
-                <td>{m.label}</td>
-                <td className="num">{m.latest ?? '–'}</td>
-                <td>{m.direction ?? '–'}</td>
-                <td><StatusPill status={m.status}>{STATUS_LABEL[m.status]}</StatusPill></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <p className="muted small" style={{ marginTop: '0.75rem' }}>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Measurement</th><th>Latest</th><th>Trend</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              {summary.map((m) => (
+                <tr key={m.type}>
+                  <td>{m.label}</td>
+                  <td className="num">{m.latest ?? '–'}</td>
+                  <td>{m.direction ?? '–'}</td>
+                  <td><StatusPill status={m.status}>{STATUS_LABEL[m.status]}</StatusPill></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="muted small spaced">
           Confidence in explanations: <strong>{confidence}</strong>. More readings make the picture clearer.
         </p>
       </section>

@@ -1,12 +1,15 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
+import { Icon } from './Icons'
 import { FALLBACK_REASONS } from '../lib/api'
 
 // Simple question-and-answer box, shared by both assistants.
 // ask(question) must return { text, source, reason?, confidence? }.
-export default function Chat({ ask, placeholder, quickQuestions = [], intro }) {
+// tone: 'lavender' (health assistant) or 'periwinkle' (medication assistant).
+export default function Chat({ ask, placeholder, quickQuestions = [], intro, tone = 'lavender', icon = 'ai' }) {
   const [messages, setMessages] = useState([])
   const [question, setQuestion] = useState('')
   const [busy, setBusy] = useState(false)
+  const inputId = useId()
 
   async function send(q) {
     const text = q.trim()
@@ -23,11 +26,11 @@ export default function Chat({ ask, placeholder, quickQuestions = [], intro }) {
   }
 
   return (
-    <div className="stack">
+    <div className={`chat-box tone-${tone}`}>
       {quickQuestions.length > 0 && (
-        <div className="row">
+        <div className="chips" aria-label="Suggested questions">
           {quickQuestions.map((q) => (
-            <button key={q} type="button" className="btn secondary" onClick={() => send(q)} disabled={busy}>
+            <button key={q} type="button" className="chip" onClick={() => send(q)} disabled={busy}>
               {q}
             </button>
           ))}
@@ -35,44 +38,62 @@ export default function Chat({ ask, placeholder, quickQuestions = [], intro }) {
       )}
 
       <div className="chat" aria-live="polite">
-        {!messages.length && intro && <div className="bubble ai">{intro}</div>}
-        {messages.map((m, i) => (
-          <div key={i} className={`bubble ${m.from}`}>
-            {m.text}
-            {m.from === 'ai' && (
+        {!messages.length && intro && <AiBubble icon={icon}>{intro}</AiBubble>}
+        {messages.map((m, i) =>
+          m.from === 'me' ? (
+            <div key={i} className="bubble me">
+              {m.text}
+            </div>
+          ) : (
+            <AiBubble key={i} icon={icon}>
+              {m.text}
               <span className="source">
                 {m.source === 'ai' && 'Answer from the AI assistant.'}
                 {m.source === 'offline' && (FALLBACK_REASONS[m.reason] ?? 'Pre-written offline answer.')}
                 {m.source === 'safety' && 'Safety rule: this needs a person, not an app.'}
                 {m.confidence && ` Confidence: ${m.confidence}.`}
               </span>
-            )}
-          </div>
-        ))}
-        {busy && <div className="bubble ai muted">Thinking…</div>}
+            </AiBubble>
+          ),
+        )}
+        {busy && (
+          <AiBubble icon={icon} muted>
+            <span className="thinking">Thinking</span>
+          </AiBubble>
+        )}
       </div>
 
       <form
-        className="row"
+        className="ask-row"
         onSubmit={(e) => {
           e.preventDefault()
           send(question)
         }}
       >
-        <label htmlFor="chat-q" className="sr-only">Your question</label>
+        <label htmlFor={inputId} className="sr-only">Your question</label>
         <input
-          id="chat-q"
+          id={inputId}
           type="text"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           placeholder={placeholder}
           maxLength={500}
-          style={{ flex: '1 1 240px' }}
         />
         <button className="btn" type="submit" disabled={busy || !question.trim()}>
           Ask
         </button>
       </form>
+    </div>
+  )
+}
+
+function AiBubble({ icon, muted, children }) {
+  return (
+    <div className={`bubble ai ${muted ? 'muted' : ''}`}>
+      <span className="bubble-icon" aria-hidden="true">
+        <Icon name={icon} size={18} />
+      </span>
+      <div className="bubble-text">{children}</div>
     </div>
   )
 }

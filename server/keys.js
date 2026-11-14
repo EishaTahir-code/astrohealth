@@ -17,7 +17,10 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const DEFAULT_MODEL = 'llama-3.3-70b-versatile';
+// Groq retired "llama-3.3-70b-versatile", so the default is now gpt-oss-120b.
+// If a model disappears, server/groq.js tries the BACKUP_MODELS in order.
+const DEFAULT_MODEL = 'openai/gpt-oss-120b';
+export const BACKUP_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'];
 
 function readEnvFile(name) {
   const file = path.join(ROOT, name);

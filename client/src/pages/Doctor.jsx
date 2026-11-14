@@ -1,92 +1,41 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import HealthOverview from '../components/HealthOverview'
 import AlertnessChart from '../components/AlertnessChart'
 import StatusPill from '../components/StatusPill'
+import { Icon } from '../components/Icons'
 import { db } from '../lib/db'
-import { currentDoctor, login, logout } from '../lib/auth'
 import { detectFlags } from '../lib/health'
 import { detectDecline } from '../lib/alertness'
 import { CREW, crewName } from '../data/crew'
 
 // Doctor dashboard. Shows health readings, alertness and red flags only.
 // It never loads check-in notes, moods, journals or family messages.
-export default function Doctor({ astronautId }) {
-  const [doctor, setDoctor] = useState(currentDoctor)
-
-  if (!doctor) return <Login onLogin={setDoctor} />
-
+// Sign in and sign out are handled by the sign-in page and the sidebar.
+export default function Doctor({ astronautId, doctor }) {
   return (
     <div className="page">
-      <div className="row" style={{ justifyContent: 'space-between', marginBottom: '1rem' }}>
-        <span className="muted">Signed in as {doctor.name}</span>
-        <button
-          className="btn secondary"
-          type="button"
-          onClick={() => {
-            logout()
-            setDoctor(null)
-          }}
-        >
-          Sign out
-        </button>
-      </div>
       {astronautId && CREW.some((c) => c.id === astronautId) ? (
         <Profile id={astronautId} doctor={doctor} />
       ) : (
-        <CrewList />
+        <CrewList doctor={doctor} />
       )}
     </div>
   )
 }
 
-function Login({ onLogin }) {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-
-  function submit(e) {
-    e.preventDefault()
-    const session = login(email, password)
-    if (session) onLogin(session)
-    else setError('That email and password do not match a doctor account. Check both and try again.')
-  }
-
-  return (
-    <div className="page" style={{ maxWidth: 460 }}>
-      <form className="card" onSubmit={submit} noValidate>
-        <h1>Doctor sign in</h1>
-        <p className="muted small">For flight surgeons only.</p>
-        <div className="field">
-          <label htmlFor="email">Email</label>
-          <input id="email" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} />
-        </div>
-        <div className="field">
-          <label htmlFor="password">Password</label>
-          <input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        </div>
-        {error && <p role="alert" style={{ color: 'var(--bad)' }}>{error}</p>}
-        <button className="btn" type="submit">Sign in</button>
-        <div className="alert info small" style={{ marginTop: '1rem' }}>
-          Demo account: <strong>dr.rivera@orbloom.demo</strong> with password <strong>demo1234</strong>. Fake login,
-          not real security.
-        </div>
-      </form>
-    </div>
-  )
-}
-
-function CrewList() {
+function CrewList({ doctor }) {
   const readings = useLiveQuery(() => db.readings.toArray(), [])
   const tests = useLiveQuery(() => db.reactionTests.toArray(), [])
   if (!readings || !tests) return <p>Loading…</p>
 
   return (
     <>
-      <div className="page-head">
+      <header className="page-head">
+        <p className="today-date">Signed in as {doctor.name}</p>
         <h1>Crew health</h1>
         <p>Select an astronaut to see their trends and alerts. Private journals, moods and family messages are not shown.</p>
-      </div>
+      </header>
       <div className="grid grid-3">
         {CREW.map((p) => {
           const flags = detectFlags(readings.filter((r) => r.userId === p.id))
@@ -95,18 +44,22 @@ function CrewList() {
           const alert = detectDecline(tests.filter((t) => t.userId === p.id))
           const overall = reds || alert.status === 'red' ? 'red' : yellows || alert.status === 'yellow' ? 'yellow' : 'green'
           return (
-            <a key={p.id} className="door" href={`#/doctor/${p.id}`}>
-              <div className="row" style={{ justifyContent: 'space-between' }}>
-                <h2 style={{ margin: 0 }}>{p.name}</h2>
+            <a key={p.id} className={`card crew-card status-${overall}`} href={`#/doctor/${p.id}`} style={{ '--icon-accent': p.flower }}>
+              <div className="row spread">
+                <span className="crew-name">
+                  <Icon name="person" size={24} />
+                  <h2>{p.name}</h2>
+                </span>
                 <StatusPill status={overall}>
                   {overall === 'red' ? 'Red flag' : overall === 'yellow' ? 'Watch' : 'Stable'}
                 </StatusPill>
               </div>
-              <p>{p.role}</p>
+              <p className="muted">{p.role}</p>
               <p className="small">
                 {reds} red flag{reds === 1 ? '' : 's'}, {yellows} to watch
                 {alert.status === 'red' ? ', large alertness drop' : alert.status === 'yellow' ? ', alertness lower' : ''}
               </p>
+              <span className="text-link">Open profile</span>
             </a>
           )
         })}
@@ -127,13 +80,13 @@ function Profile({ id, doctor }) {
 
   return (
     <>
-      <p><a href="#/doctor">Back to crew list</a></p>
-      <div className="page-head">
+      <a className="back-link" href="#/doctor">
+        <Icon name="back" size={18} /> Back to crew list
+      </a>
+      <header className="page-head">
         <h1>{crewName(id)}</h1>
-        <p>
-          {person.role}. Health readings and alertness only. This visit is recorded in the access log.
-        </p>
-      </div>
+        <p>{person.role}. Health readings and alertness only. This visit is recorded in the access log.</p>
+      </header>
       {!readings || !tests ? (
         <p>Loading…</p>
       ) : (

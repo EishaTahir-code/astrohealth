@@ -16,7 +16,8 @@ Rules you must always follow:
 - If any reading is red, or the person describes worrying symptoms, tell them to contact the flight surgeon.
 - Never tell anyone to ignore symptoms.
 - Green = stable, yellow = needs attention, red = potentially concerning. These are demo ranges.
-- Keep answers under 150 words. Use short paragraphs or a short list.
+- Keep answers under 150 words. Use short paragraphs or a short list with "-" bullets.
+- Write plain text only: no markdown, no bold, no headings, no tables.
 - Do not add a disclaimer; the app shows one.`;
 
 export async function healthAssistant(req, res) {

@@ -1,8 +1,8 @@
 // A row of 1-5 buttons (radio buttons underneath, so keyboards and screen readers work).
 export default function ScaleInput({ name, label, low, high, value, onChange }) {
   return (
-    <fieldset className="field" style={{ border: 0, padding: 0, margin: '0 0 1.1rem' }}>
-      <legend style={{ fontWeight: 600, padding: 0 }}>{label}</legend>
+    <fieldset className="field scale-field">
+      <legend className="scale-legend">{label}</legend>
       <div className="scale">
         {[1, 2, 3, 4, 5].map((n) => (
           <label key={n}>
