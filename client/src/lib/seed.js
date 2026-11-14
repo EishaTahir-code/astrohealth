@@ -61,7 +61,32 @@ async function seedReadings() {
   await db.readings.bulkAdd(rows)
 }
 
+// FAKE past reaction tests. Sara's (a3) alertness drops sharply, so the demo shows a red flag.
+async function seedReactionTests() {
+  const rows = []
+  const plans = {
+    a1: [80, 83, 78, 82],
+    a2: [86, 84, 88, 85, 87],
+    a3: [79, 76, 72, 64, 45],
+  }
+  for (const [userId, scores] of Object.entries(plans)) {
+    scores.forEach((score, i) => {
+      rows.push({
+        userId,
+        reactionTimeMs: Math.round(600 - (score / 100) * 350),
+        accuracy: Math.min(100, score + 12),
+        consistency: Math.min(100, score + 5),
+        alertnessScore: score,
+        createdAt: daysAgo((scores.length - i) * 2).getTime(),
+        synced: true,
+      })
+    })
+  }
+  await db.reactionTests.bulkAdd(rows)
+}
+
 export async function ensureDemoData() {
   await seedOnce('seed:checkIns', seedCheckIns)
   await seedOnce('seed:readings', seedReadings)
+  await seedOnce('seed:reaction', seedReactionTests)
 }
