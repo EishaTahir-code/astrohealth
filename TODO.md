@@ -40,11 +40,11 @@
 ## Phase 3: Astronaut personal app
 - [x] Build daily check-in screen
 - [x] Add mood, stress, energy, sleep, workload inputs
-- [ ] Build physical-health input forms
-- [ ] Add blood-pressure, heart-rate, temperature, sleep, blood-sugar tracking
-- [ ] Build trend graphs
-- [ ] Add color-coded health status
-- [ ] Add red-flag detection
+- [x] Build physical-health input forms
+- [x] Add blood-pressure, heart-rate, temperature, sleep, blood-sugar tracking
+- [x] Build trend graphs
+- [x] Add color-coded health status
+- [x] Add red-flag detection
 - [ ] Add emergency escalation flow
 
 ## Phase 4: Reaction game
