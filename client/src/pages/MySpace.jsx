@@ -2,6 +2,7 @@ import Placeholder from '../components/Placeholder'
 import CheckIn from './CheckIn'
 import Health from './Health'
 import HealthAssistant from './HealthAssistant'
+import Medication from './Medication'
 import { crewName, ME } from '../data/crew'
 
 // The astronaut's personal area, split into tabs.
@@ -18,7 +19,7 @@ export default function MySpace({ tab = 'checkin' }) {
     checkin: <CheckIn />,
     health: <Health />,
     ai: <HealthAssistant />,
-    meds: <Placeholder title="Medication assistant" />,
+    meds: <Medication />,
     reaction: <Placeholder title="Alertness game" />,
   }
 

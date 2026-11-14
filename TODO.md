@@ -108,12 +108,12 @@
 - [x] Build AI 1 (Health Trends Assistant): graph explanations
 - [x] Add AI 1 question-and-answer chat
 - [ ] Create `medicines.json` from the approved spacecraft medicine list
-- [ ] Build AI 2 (Medication Assistant) that answers only from `medicines.json`
-- [ ] Add offline fallback responses for both AIs
-- [ ] Add safety filters and medical disclaimers
+- [x] Build AI 2 (Medication Assistant) that answers only from `medicines.json`
+- [x] Add offline fallback responses for both AIs
+- [x] Add safety filters and medical disclaimers
 - [x] Add uncertainty indicators
 - [x] Add escalation rules
-- [ ] Prevent diagnosis claims and unsafe medication advice
+- [x] Prevent diagnosis claims and unsafe medication advice
 - [ ] Add doctor-review workflow for serious concerns
 
 ## Phase 10: Testing and launch

@@ -1,6 +1,7 @@
 import express from 'express';
 import { getAiConfig } from './keys.js';
 import { healthAssistant } from './ai-health.js';
+import { medicationAssistant } from './ai-medication.js';
 
 const app = express();
 app.use(express.json({ limit: '50kb' }));
@@ -18,6 +19,9 @@ app.get('/api/status', (req, res) => {
 
 // AI 1: Health Trends Assistant
 app.post('/api/ai/health', healthAssistant);
+
+// AI 2: Medication Assistant
+app.post('/api/ai/medication', medicationAssistant);
 
 const PORT =Number(process.env.PORT) || 3001;
 // 127.0.0.1 = only reachable from this computer.

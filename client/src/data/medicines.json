@@ -1,0 +1,46 @@
+{
+  "notice": "SAMPLE, replace with the approved spacecraft list",
+  "source": "SAMPLE DATA made up for the demo. Not an approved medicine list. No doses are included on purpose.",
+  "medicines": [
+    {
+      "name": "Acetaminophen (paracetamol)",
+      "aliases": ["acetaminophen", "paracetamol"],
+      "usedFor": ["mild pain", "headache", "fever"],
+      "dosage": "SAMPLE: follow the dose on the approved spacecraft list or ask the flight surgeon.",
+      "warnings": ["SAMPLE: check with the flight surgeon before combining with other pain relievers."],
+      "sample": true
+    },
+    {
+      "name": "Ibuprofen",
+      "aliases": ["ibuprofen"],
+      "usedFor": ["mild pain", "muscle aches", "swelling"],
+      "dosage": "SAMPLE: follow the dose on the approved spacecraft list or ask the flight surgeon.",
+      "warnings": ["SAMPLE: can upset the stomach. Check with the flight surgeon if you have stomach or kidney concerns."],
+      "sample": true
+    },
+    {
+      "name": "Meclizine",
+      "aliases": ["meclizine"],
+      "usedFor": ["motion sickness", "space sickness", "nausea", "dizziness"],
+      "dosage": "SAMPLE: follow the dose on the approved spacecraft list or ask the flight surgeon.",
+      "warnings": ["SAMPLE: can cause drowsiness. Avoid high-risk tasks until you know how it affects you."],
+      "sample": true
+    },
+    {
+      "name": "Loratadine",
+      "aliases": ["loratadine"],
+      "usedFor": ["allergies", "sneezing", "itchy eyes", "runny nose"],
+      "dosage": "SAMPLE: follow the dose on the approved spacecraft list or ask the flight surgeon.",
+      "warnings": ["SAMPLE: check how it affects you before high-risk tasks."],
+      "sample": true
+    },
+    {
+      "name": "Melatonin",
+      "aliases": ["melatonin"],
+      "usedFor": ["trouble falling asleep", "sleep schedule shifts"],
+      "dosage": "SAMPLE: follow the dose on the approved spacecraft list or ask the flight surgeon.",
+      "warnings": ["SAMPLE: can cause drowsiness. Take only at planned sleep times."],
+      "sample": true
+    }
+  ]
+}
