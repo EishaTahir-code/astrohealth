@@ -13,10 +13,10 @@ db.version(1).stores({
 })
 
 // Runs a seeding function only once per device.
+// The check happens inside the transaction, so two calls at once can't both add data.
 export async function seedOnce(key, fn) {
-  const done = await db.meta.get(key)
-  if (done) return
   await db.transaction('rw', db.tables, async () => {
+    if (await db.meta.get(key)) return
     await fn()
     await db.meta.put({ key, at: Date.now() })
   })

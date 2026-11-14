@@ -31,7 +31,7 @@
 - [ ] Set up authentication system
 - [ ] Create astronaut login
 - [ ] Create doctor login
-- [ ] Create shared no-login interface
+- [x] Create shared no-login interface
 - [ ] Implement offline data storage
 - [ ] Implement background sync when connection is available
 - [ ] Implement encryption for sensitive data
@@ -80,16 +80,16 @@
 - [ ] Link greenhouse contribution to garden growth and well-being score
 
 ## Phase 7: Shared garden
-- [ ] Build shared garden screen
-- [ ] Create flower bed for each astronaut
-- [ ] Start each bed empty
-- [ ] Link healthy activities to garden growth
-- [ ] Link poor routines to garden wilting
+- [x] Build shared garden screen
+- [x] Create flower bed for each astronaut
+- [x] Start each bed empty
+- [x] Link healthy activities to garden growth
+- [x] Link poor routines to garden wilting
 - [ ] Build garden animations and growth stages
-- [ ] Add color-coded garden status
+- [x] Add color-coded garden status
 - [ ] Add crew-support alert system
-- [ ] Ensure alerts include astronaut name
-- [ ] Ensure alerts do not expose private health details
+- [x] Ensure alerts include astronaut name
+- [x] Ensure alerts do not expose private health details
 - [ ] Add astronaut control to pause or mute alerts
 
 ## Phase 8: Doctor dashboard
