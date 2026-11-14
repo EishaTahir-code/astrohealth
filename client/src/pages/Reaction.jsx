@@ -7,6 +7,7 @@ import { ME } from '../data/crew'
 
 const TRIALS = 5
 const MISS_AFTER_MS = 2000
+const randomWait = () => 1500 + Math.random() * 2500 // 1.5 to 4 seconds
 
 // Reaction-time game: wait for the signal, then tap as fast as you can. 5 rounds.
 export default function Reaction() {
@@ -55,7 +56,7 @@ function Game() {
         setMessage('Missed that one.')
         next()
       }, MISS_AFTER_MS)
-    }, 1500 + Math.random() * 2500)
+    }, randomWait())
   }
 
   function next() {
