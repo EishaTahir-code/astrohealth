@@ -25,7 +25,7 @@
 - [ ] Define success metrics
 
 ## Phase 2: Core app setup
-- [ ] Set up project repository
+- [x] Set up project repository
 - [ ] Choose tech stack
 - [ ] Set up local database
 - [ ] Set up authentication system
