@@ -3,7 +3,39 @@
 Orbloom is the astronaut health app described in PRD.md. Every feature in the PRD now has a working demo version,
 tested end to end in a real browser. Steps 1 to 8 still have their own branches on GitHub (`step/1-setup` … `step/8-doctor`).
 
-## Latest update (14 Nov 2026): "fix everything" round
+## Round 3 (14 Nov 2026, evening): your improvement list
+
+Work branch: `claude/great-davinci-gccflf`. **Not merged into `main` yet**: `main` still has the earlier version
+(commit `ff0f5a2`) until you say it is OK.
+
+| You asked for | What changed |
+|---|---|
+| Sign-in flowers should sway with the pointer | The sign-in artwork is now drawn live (`components/SignInMeadow.jsx`): every stem sways in a breeze and bends when the pointer moves through it. Fireflies scatter. Still picture if "reduce motion" is on. |
+| Remove the text in the top-left of the image, change the caption colour | The "Nocturne Herbarium" text is gone. "Every crew member tends a bed of light…" is now pale lime, at the top of the artwork. |
+| Guide on first sign-in, then at the bottom with Settings | A step-by-step guide (Next / Back / Skip, arrow keys, Esc) opens the first time each account signs in on a device. Afterwards: **Guide** and **Settings** buttons at the bottom of the menu. Separate guides for astronauts and flight surgeons. |
+| Show the password | "Show / Hide" button inside the password field. |
+| Sign-in top header | A header bar across the top of the sign-in page: logo, connection status and a "Crew garden" button. |
+| Ranges for blood pressure (top and bottom) and temperature | The form shows the normal range next to every field (top 90–129, bottom 60–84 mmHg, 36.1–37.5 °C, heart rate, sleep, blood sugar). The blood pressure graph now has a band for the top **and** the bottom number, and every graph says its normal range. |
+| Combine Health and the Health assistant | One **Health** page: the measurement form and the assistant side by side, graphs below. No more "AI 1" anywhere. |
+| Hovering "Potentially concerning" should lead to the AI | Every yellow or red status (on Health and on Today) shows "Ask the assistant what this means" on hover; clicking asks the assistant about that exact reading. |
+| The AI gave the same answer whatever you asked | Two causes, both fixed. 1) The app was really getting pre-written answers (most likely an older copy of the server was still running, or the key was missing or refused), and it did not say why. Now a notice above the chat says exactly why (no key, example text in `.env.health`, key refused by Groq, signed in offline, older server) and how to fix it. 2) The pre-written answers now follow the question: which measurement, "is it normal", "why", "what should I do". |
+| Remove AI 2: Medication = kit list only | The Medication AI is gone (page and server route). The tab is now **Medical kit**: search the 95 medicines, crew pack or whole kit, filter by pack. Works fully offline. |
+| Garden beds should grow with the crew; drag to see other beds, no zooming out | The demo crew is now **8 astronauts** (5 new, with accounts and history). The garden is wider than the screen with beds at the same size: **drag sideways** (or swipe, use the ‹ › arrows, the name dots at the bottom, a trackpad or Shift + wheel) to explore, with a gentle glide when you let go. Tabbing to a sign brings its bed into view. Each person has their own flowers. |
+| How to check the PWA / what works offline | See "Works without internet" and "Checking the offline install" below. |
+| Greenhouse crops | Lettuce, Chinese cabbage, mustard greens, kale, tomatoes, radishes and chile peppers (all real ISS crops). |
+| Flight surgeon's access log always "Waiting" | Cause: signing in while the app could not reach the server (offline sign-in) never connected syncing. Fix: a **Reconnect** bar appears at the top as soon as the server is reachable; enter your password once and everything syncs (tested: rows change from "Waiting" to "Yes"). |
+
+Also fixed so it cannot happen again: `npm run dev` now refuses to start, with a clear message, if an older copy of
+Orbloom is still running (that is what showed you the old version earlier), and the app shows a notice if an older
+server answers.
+
+**Tested:** the full browser walkthrough (all screens, both roles, 3 accounts) passes with no errors; the new parts
+were tested too: swaying sign-in, guide on first sign-in, show password, ask-the-assistant from a red status,
+kit-only Medication, 8-bed garden (drag, arrows, dots, keyboard, hover cards, phone), offline sign-in → Reconnect →
+access log synced. **Not tested live:** the AI's own answers this round, because the Groq key saved in my test session
+was refused by Groq (it may have been deleted on your Groq account). The AI code itself did not change.
+
+## Earlier on 14 Nov 2026: "fix everything" round
 
 Work branch: `claude/great-davinci-gccflf`, merged into `main`.
 
@@ -88,7 +120,8 @@ npm run dev
 Open **http://localhost:5173**. The first screen is the sign-in page. Stop with `Ctrl + C`.
 
 Accounts (all passwords **demo1234**):
-- Astronauts: **maya.chen@orbloom.demo**, leo.okafor@orbloom.demo, sara.lindqvist@orbloom.demo
+- Astronauts: **maya.chen@orbloom.demo**, leo.okafor@orbloom.demo, sara.lindqvist@orbloom.demo, arjun.mehta@orbloom.demo,
+  hana.sato@orbloom.demo, tomas.alvarez@orbloom.demo, amara.nwosu@orbloom.demo, elena.petrova@orbloom.demo
 - Flight surgeons: **dr.rivera@orbloom.demo**, dr.patel@orbloom.demo
 
 The crew garden opens without signing in: "Visit the crew garden without signing in".
@@ -104,15 +137,42 @@ To start fresh: Settings → "Erase this device" (or delete the `orbloom` Indexe
    ```
    GROQ_API_KEY=gsk_your_key_here
    ```
-   This turns on AI 1 (Health assistant) and the doctor's AI summary.
-3. Do the same in **`.env.medication`** for AI 2 (Medication assistant). The same key is fine.
-4. No restart needed. The sidebar status changes to "AI connected".
+   This turns on the Health assistant and the doctors' AI summary. (`.env.medication` is no longer needed.)
+3. No restart needed. The sidebar status changes to "AI connected". If something is wrong, the Health page says
+   what: no key yet, still the example text, or a key Groq does not accept.
 
 Rules:
 - Never put the key in any other file, and never start its name with `VITE_` (Vite would copy it into the browser).
 - `.env`, `.env.*` and `server/data/` are in `.gitignore` and have never been committed.
 - Optional: `GROQ_MODEL=some-model-name` changes the model (default `openai/gpt-oss-120b`). If that model is removed, the server switches to a backup by itself.
 - Optional: `AUTH_SECRET=…` in `.env` sets the key that signs login tokens. Without it, the server makes a random one in `server/data/`.
+
+## Works without internet
+
+These work 100% with no internet and no server (everything is saved on the device first):
+sign-in (on a device that has the app), Today, daily check-in, health measurements, graphs, normal ranges and red-flag
+warnings, the alertness game, the medical kit list, the greenhouse, the crew garden, settings, and **writing** family
+messages, messages to the flight surgeon and help signals (they wait in a queue). The Health assistant gives
+pre-written answers about your own readings.
+
+These need the ground link (internet + the app server): live AI answers, actually **delivering** messages and help
+signals, receiving family replies and flight-surgeon messages, syncing with the doctors, and the doctors' AI summary.
+
+## Checking the offline install (PWA)
+
+The offline install only works in the built app, not in `npm run dev`:
+
+1. Stop `npm run dev`. Then run `npm run build`, then `npm run preview --prefix client` (keep the server running in
+   another terminal with `npm run start --prefix server` if you also want sign-in and sync).
+2. Open http://localhost:4173 once.
+3. Press `F12` → **Application** → **Service workers**: it should say "activated and is running".
+   **Application → Manifest** shows the name and icons; Chrome/Edge show an "Install app" icon in the address bar.
+4. In **Network**, tick **Offline**, then reload: the app still opens.
+
+## Going back to an earlier version
+
+`main` keeps the last version you approved until you say the new one is OK. The version before this round is
+commit `ff0f5a2` on GitHub.
 
 ## What is still missing or limited
 
@@ -135,9 +195,10 @@ Rules:
 
 ```
 client/                    React app (Vite)
-  src/pages/               one file per screen (SignIn, Today, CheckIn, Health, HealthAssistant, Medication,
+  src/pages/               one file per screen (SignIn, Today, CheckIn, Health, Medication (kit list),
                            CareTeam, Family, Greenhouse, Reaction, Emergency, Settings, Garden, Doctor)
-  src/components/          Shell (sidebar), GardenScene (the crew garden), FlowerBed, Icons, charts, Chat
+  src/components/          Shell (menu, Reconnect bar), Guide, SignInMeadow, GardenScene (the crew garden),
+                           HealthAssistantPanel, FlowerBed, Icons, charts, Chat
   src/lib/                 auth, api, sync, connection, secure (encryption), alerts, support (crew garden),
                            family, greenhouse, garden, health, alertness, safety, offline answers, database, seed
   src/data/                crew, check-in questions, plants, medicines.json (ISS medical kit list)
@@ -147,5 +208,5 @@ server/                    Express: auth, store (JSON file), sync, family relay,
 server/data/               the server's data and signing key (never committed)
 design/                    design notes and artwork made with the canvas-design skill
 .claude/skills/            canvas-design skill (installed with "npx skills add")
-.env.health / .env.medication   your keys (never committed)
+.env.health                your Groq key (never committed)
 ```

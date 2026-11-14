@@ -7,7 +7,9 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { getStatus } from './api'
 import { db } from './db'
 
-const state = { online: navigator.onLine, server: null, ai: null }
+// oldServer: an older copy of the Orbloom server is answering (it lacks sign-in and sync).
+// aiProblem: why the AI is off ('missing', 'example' or 'refused' key), or null.
+const state = { online: navigator.onLine, server: null, ai: null, oldServer: false, aiProblem: null }
 let snapshot = { ...state }
 const listeners = new Set()
 
@@ -20,7 +22,9 @@ export async function checkServer() {
   const s = navigator.onLine ? await getStatus() : null
   state.online = navigator.onLine
   state.server = Boolean(s)
-  state.ai = s ? Boolean(s.ai.health || s.ai.medication) : false
+  state.oldServer = Boolean(s) && (s.app !== 'orbloom' || (s.version ?? 0) < 3)
+  state.ai = s && !state.oldServer ? Boolean(s.ai?.health) : false
+  state.aiProblem = s && !state.oldServer ? s.ai?.problem ?? null : null
   emit()
   return state.server
 }
@@ -47,5 +51,5 @@ export function useLink() {
   useEffect(() => {
     start()
   }, [])
-  return { ...s, blackout, open: s.online && s.server === true && !blackout }
+  return { ...s, blackout, open: s.online && s.server === true && !s.oldServer && !blackout }
 }

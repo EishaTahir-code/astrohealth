@@ -3,9 +3,8 @@
 // Keys live ONLY in .env files in the project root folder.
 // They are never written in code and never sent to the browser.
 //
-//   AI 1 (Health Trends Assistant):  .env.health      ->  GROQ_API_KEY=your-key-here
-//   AI 2 (Medication Assistant):     .env.medication  ->  GROQ_API_KEY=your-key-here
-//   Backup for both:                 .env             ->  GROQ_API_KEY=your-key-here
+//   Health assistant + doctors' AI summary:  .env.health  ->  GROQ_API_KEY=your-key-here
+//   (older setups: .env.medication or .env also work)
 //
 // The files are read on every request, so after adding a key you do
 // not need to restart anything. If a key is empty, the app uses its
@@ -32,12 +31,24 @@ function readEnvFile(name) {
   }
 }
 
-// which: 'health' (AI 1) or 'medication' (AI 2)
-export function getAiConfig(which) {
-  const own = readEnvFile(which === 'medication' ? '.env.medication' : '.env.health');
-  const shared = readEnvFile('.env');
-  return {
-    apiKey: (own.GROQ_API_KEY || shared.GROQ_API_KEY || '').trim(),
-    model: (own.GROQ_MODEL || shared.GROQ_MODEL || DEFAULT_MODEL).trim(),
-  };
+// The Groq key for the Health assistant (and the doctors' AI summary).
+// It is read from .env.health first, then .env.medication or .env (older setups), on every request.
+export function getAiConfig() {
+  const files = [readEnvFile('.env.health'), readEnvFile('.env.medication'), readEnvFile('.env')];
+  const keys = files.map((f) => (f.GROQ_API_KEY || '').trim()).filter(Boolean);
+  // Prefer a real key over one that is still the example text.
+  const apiKey = keys.find((k) => keyProblem(k) !== 'example') || keys[0] || '';
+  const model = (files.map((f) => f.GROQ_MODEL).find((m) => m && m.trim()) || DEFAULT_MODEL).trim();
+  return { apiKey, model, problem: keyProblem(apiKey) };
 }
+
+// Explains what is wrong with the key, if anything (shown in the app so it is easy to fix).
+export function keyProblem(apiKey) {
+  if (!apiKey) return 'missing';
+  if (/your-groq-key-here|your_key|^gsk_your/i.test(apiKey)) return 'example';
+  if (refusedKeys.has(apiKey)) return 'refused';
+  return null;
+}
+
+// Keys that Groq turned down (wrong or deleted). Remembered until the server restarts.
+export const refusedKeys = new Set();

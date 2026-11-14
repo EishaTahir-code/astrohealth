@@ -21,6 +21,11 @@ export const FAMILY = {
     { id: 'erik', name: 'Erik' },
     { id: 'mormor', name: 'Mormor (Grandma)' },
   ],
+  a4: [{ id: 'priya', name: 'Priya' }, { id: 'kabir', name: 'Kabir' }],
+  a5: [{ id: 'yuki', name: 'Yuki' }, { id: 'okaasan', name: 'Mum' }],
+  a6: [{ id: 'lucia', name: 'Lucía' }, { id: 'mateo', name: 'Mateo' }],
+  a7: [{ id: 'chidi', name: 'Chidi' }, { id: 'adaeze', name: 'Adaeze' }],
+  a8: [{ id: 'ivan', name: 'Ivan' }, { id: 'sofia', name: 'Sofia' }],
 };
 
 const REPLIES = [

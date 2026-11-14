@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Logo } from '../components/Icons'
 import { ConnectionStatus } from '../components/Shell'
+import SignInMeadow from '../components/SignInMeadow'
 import { DEMO_ACCOUNT, ROLE_LABEL, login, useSession } from '../lib/auth'
-import art from '../assets/art/night-garden.webp'
+import { useLink } from '../lib/connection'
 
 // First screen of the app. Astronauts and flight surgeons sign in here.
 // want: the role needed for the page the person tried to open (optional).
@@ -13,6 +14,8 @@ export default function SignIn({ want }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const link = useLink()
 
   async function submit(e) {
     e.preventDefault()
@@ -43,20 +46,31 @@ export default function SignIn({ want }) {
   }
 
   return (
-    <div className="signin">
+    <div className="signin-page">
+      <header className="signin-bar">
+        <a className="brand" href="#/">
+          <Logo /> <span>Orbloom</span>
+        </a>
+        <ConnectionStatus compact />
+        <a className="btn secondary small-btn" href="#/garden">Crew garden</a>
+      </header>
+      <div className="signin">
       <div className="signin-art">
-        <img src={art} alt="A meadow of glowing white wildflowers at night under a planet's edge, with small specimen labels." />
+        <SignInMeadow />
         <p className="signin-caption">Every crew member tends a bed of light. Check in, rest well, and watch it bloom.</p>
       </div>
 
       <div className="signin-panel">
         <div className="signin-inner">
-          <div className="brand brand-lg">
-            <Logo size={40} /> <span>Orbloom</span>
-          </div>
           <span className="tag">Health companion for long missions</span>
           <h1 className="signin-title">Welcome back to the garden</h1>
           <p className="muted">Everything is saved on this device first, so it works even with no ground link.</p>
+
+          {link.oldServer && (
+            <p className="alert yellow small" role="status">
+              An older copy of the Orbloom server is answering, so sign-in will only work offline. Close the other terminal running Orbloom, then run “npm run dev” again.
+            </p>
+          )}
 
           {want && user && user.role !== want && (
             <p className="alert info small" role="status">
@@ -82,7 +96,19 @@ export default function SignIn({ want }) {
             </div>
             <div className="field">
               <label htmlFor="password">Password</label>
-              <input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <div className="password-field">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button type="button" className="show-pw" aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)}>
+                  {showPassword ? 'Hide' : 'Show'}
+                  <span className="sr-only"> password</span>
+                </button>
+              </div>
             </div>
             {error && (
               <p role="alert" className="form-error">
@@ -107,9 +133,8 @@ export default function SignIn({ want }) {
           <a className="garden-link" href="#/garden">
             Visit the crew garden without signing in
           </a>
-
-          <ConnectionStatus compact />
         </div>
+      </div>
       </div>
     </div>
   )

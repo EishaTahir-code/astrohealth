@@ -31,13 +31,14 @@ export async function doctorSummary(req, res) {
     checkins_last_7_days: Number(body.checkins) || 0,
   };
 
-  const { apiKey, model } = getAiConfig('health');
-  if (!apiKey) return res.json({ fallback: true, reason: 'no-key' });
+  const { apiKey, model, problem } = getAiConfig();
+  if (problem === 'missing') return res.json({ fallback: true, reason: 'no-key' });
+  if (problem === 'example') return res.json({ fallback: true, reason: 'example-key' });
   try {
     const text = await askGroq({ apiKey, model, system: SYSTEM, user: JSON.stringify(payload, null, 1) });
     res.json({ answer: filterAnswer(text), source: 'ai' });
   } catch (err) {
     console.warn('Doctor summary failed, using fallback:', err.message);
-    res.json({ fallback: true, reason: /rate limit/i.test(err.message) ? 'ai-busy' : 'ai-error' });
+    res.json({ fallback: true, reason: err.code === 'bad-key' ? 'bad-key' : /rate limit/i.test(err.message) ? 'ai-busy' : 'ai-error' });
   }
 }

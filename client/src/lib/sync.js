@@ -68,7 +68,7 @@ async function doSync() {
   if (!navigator.onLine) return set({ phase: 'waiting', message: 'No internet. Everything is saved on this device.' })
   if (await getSetting('blackout', false)) return set({ phase: 'waiting', message: 'Ground link down (practice mode). Changes wait on this device.' })
   if (!user.token) {
-    return set({ phase: 'waiting', message: user.expired ? 'Sign in again to keep syncing.' : 'Signed in offline. Sign in again while connected to sync.' })
+    return set({ phase: 'waiting', message: user.expired ? 'Sign-in ran out. Use Reconnect to keep syncing.' : 'Signed in offline. Use Reconnect at the top to sync.' })
   }
   if (!(await checkServer())) return set({ phase: 'waiting', message: 'App server not reachable. Changes wait on this device.' })
 

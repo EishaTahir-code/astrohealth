@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import HealthOverview from '../components/HealthOverview'
+import HealthAssistantPanel from '../components/HealthAssistantPanel'
 import { db, newId } from '../lib/db'
-import { METRICS } from '../lib/health'
+import { METRICS, STATUS_LABEL, formatValue, statusOf } from '../lib/health'
 import { alertOnRedFlags } from '../lib/alerts'
 import { requestSync } from '../lib/sync'
 
@@ -13,16 +14,44 @@ const LIMITS = {
   sys: [60, 250], dia: [30, 160], heartRate: [20, 250], temperature: [30, 45], sleep: [0, 24], bloodSugar: [20, 600],
 }
 
-export default function Health({ me }) {
+// Health: add measurements, ask the assistant, and see each measurement's graph.
+// askType (from a link like #/me/health/ask-bp) asks the assistant about that measurement on arrival.
+export default function Health({ me, extra }) {
   const readings = useLiveQuery(() => db.readings.where('userId').equals(me).toArray(), [me])
+  const [request, setRequest] = useState(null)
+  const fromLink = useRef(null)
 
+  // Clicking a yellow or red status: ask the assistant about that reading, and scroll to it.
+  const askAbout = useCallback((type, reading) => {
+    const text = `My latest ${METRICS[type].label.toLowerCase()} is ${formatValue(reading)} and it is marked “${STATUS_LABEL[statusOf(type, reading.value, reading.value2)]}”. What could this mean, and what should I do?`
+    setRequest({ id: `${type}-${Date.now()}`, text })
+    document.getElementById('assistant')?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
+  }, [])
+
+  useEffect(() => {
+    const type = extra?.startsWith('ask-') ? extra.slice(4) : null
+    if (!readings || !type || !METRICS[type] || fromLink.current === extra) return
+    const latest = [...readings].filter((r) => r.type === type).sort((a, b) => a.recordedAt - b.recordedAt).at(-1)
+    if (!latest) return
+    // asked once per link, just after the page has drawn
+    const t = setTimeout(() => {
+      fromLink.current = extra
+      askAbout(type, latest)
+    }, 0)
+    return () => clearTimeout(t)
+  }, [extra, readings, askAbout])
+
+  if (!readings) return <p className="muted">Loading…</p>
   return (
     <div className="stack">
-      <ReadingForm me={me} />
-      {!readings ? <p>Loading…</p> : <HealthOverview readings={readings} />}
+      <div className="grid grid-2 top">
+        <ReadingForm me={me} />
+        <HealthAssistantPanel readings={readings} request={request} />
+      </div>
+      <HealthOverview readings={readings} onAsk={askAbout} />
       <p className="disclaimer">
-        Green, yellow and red use simple demo ranges, not medical advice. The shaded band on each graph is the demo
-        &ldquo;stable&rdquo; range. This app does not replace professional medical care.
+        Green, yellow and red use simple demo ranges, not medical advice. The shaded bands on each graph are the
+        normal range. This app does not replace professional medical care.
       </p>
     </div>
   )
@@ -92,12 +121,12 @@ function ReadingForm({ me }) {
       <h2>Add today&apos;s measurements</h2>
       <p className="muted small">Fill in only what you measured. Everything is optional.</p>
       <div className="grid grid-3 form-grid">
-        {field('sys', 'Blood pressure, top', '(mmHg)', '1')}
-        {field('dia', 'Blood pressure, bottom', '(mmHg)', '1')}
-        {field('heartRate', 'Heart rate', '(bpm)', '1')}
-        {field('temperature', 'Temperature', '(°C)')}
-        {field('sleep', 'Sleep last night', '(hours)')}
-        {field('bloodSugar', 'Blood sugar', '(mg/dL)', '1')}
+        {field('sys', 'Blood pressure, top', '(mmHg, normal 90–129)', '1')}
+        {field('dia', 'Blood pressure, bottom', '(mmHg, normal 60–84)', '1')}
+        {field('heartRate', 'Heart rate', '(bpm, normal 50–100)', '1')}
+        {field('temperature', 'Temperature', '(°C, normal 36.1–37.5)')}
+        {field('sleep', 'Sleep last night', '(hours, 6.5 or more)')}
+        {field('bloodSugar', 'Blood sugar', '(mg/dL, normal 70–140)', '1')}
       </div>
       <div className="row form-actions">
         <button className="btn" type="submit">Save measurements</button>

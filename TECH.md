@@ -39,29 +39,30 @@ The astronaut app works fully offline. Data syncs to the backend only during an 
 - **Garden:** id, user_id, growth_score, health_score, wellbeing_score, visual_state, last_updated
 - **DoctorAlert:** id, user_id, alert_type, severity, message, created_at, reviewed, reviewed_by
 
-## 5. The two AIs
+## 5. The AI
 
-Two separate AIs, each in its own tab. Each is one small function. API keys are read from `.env` only, never written in code.
+One AI, the **Health assistant**, on the Health page (decision of 14 Nov 2026: the Medication AI was removed;
+the Medication tab is now the searchable medical kit list, which needs no AI and works offline).
+API keys are read from `.env.health` only (older `.env.medication` / `.env` also work), never written in code.
 
-| | AI 1: Health Trends Assistant | AI 2: Medication Assistant |
+| | Health assistant | Doctors' AI summary |
 |---|---|---|
-| Tab | AI Assistant (health graphs) | Medication tab |
-| Job | Explain graphs, answer health questions, write doctor-ready summaries | Answer questions about medicines available in the spacecraft |
-| Knowledge | The astronaut's own readings and baselines | `medicines.json`, built from the ISS medical kit list (NASA 3.001) in this project |
-| API | Groq (`GROQ_API_KEY` in `.env.health`) | Groq with its own instructions (`GROQ_API_KEY` in `.env.medication`) |
-| Offline fallback | Pre-written plain-language explanations per status (green/yellow/red) | Local search of `medicines.json`, no AI needed |
+| Where | Health page (and any yellow/red status: "Ask the assistant what this means") | Doctor profile, Overview tab |
+| Job | Explain the astronaut's readings in plain words, self-care ideas, doctor-ready summary | Short summary of one astronaut's shareable data for the flight surgeon |
+| Knowledge | A summary of the astronaut's own readings (never notes or check-ins) | Readings summary, alertness, red flags, number of check-in days |
+| API | Groq, `openai/gpt-oss-120b` with automatic backup models | Same key and model |
+| Offline fallback | Pre-written answers that follow the question (which measurement, normal range, causes, tips) | Pre-written summary from the same data |
 
-### AI 2 rules (medicine list)
-- Load `medicines.json` into the AI's instructions. For each medicine: name, what it is used for, dosage and warnings **as given by the approved source**.
-- Answer ONLY from this list. If a medicine is not on the list, say "I don't have that medicine on the spacecraft list" and suggest contacting the doctor.
-- Never invent medicines or doses. Never go beyond approved protocols.
-- If the list gets large, send only the relevant medicines per question.
-- Always show the disclaimer: information only, not medical advice.
-- Red-flag symptoms: tell the astronaut to contact the doctor / flight surgeon.
+### Medical kit list (no AI)
+- `medicines.json`, built from the ISS medical kit list (NASA 3.001) in this project: 95 medicines with strength, route, side effects, comments, pack and location.
+- Search by medicine or symptom; crew self-care pack or the whole kit; "flight surgeon only" items are marked.
+- Always shows: information only, check with the flight surgeon before taking anything.
 
-### Both AIs
+### Rules for the AI
 - No diagnosis, show uncertainty, recommend escalation for red flags, respect privacy (only the astronaut's own shared data), safe offline fallback.
+- Red-flag symptoms skip the AI and go straight to "contact the flight surgeon".
 - Safety filter on every response before it is shown.
+- The app says why the AI is not live (no key, example text, key refused, offline sign-in, older server) instead of silently answering offline.
 
 ## 6. Security
 - AES encryption for sensitive local data and messages.

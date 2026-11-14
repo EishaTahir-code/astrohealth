@@ -74,10 +74,12 @@ export async function apiFamilyInbox(since) {
 }
 
 export const FALLBACK_REASONS = {
-  'no-key': 'No AI key is set yet, so this is a pre-written offline answer.',
+  'no-key': 'No AI key is set yet (add your Groq key to .env.health), so this is a pre-written offline answer.',
+  'example-key': 'The .env.health file still has the example text instead of your Groq key, so this is a pre-written offline answer.',
+  'bad-key': 'Groq did not accept the key in .env.health, so this is a pre-written offline answer. Check the key or make a new one.',
   'ai-error': 'The AI service did not answer, so this is a pre-written offline answer.',
   'ai-busy': 'The AI is busy (the free Groq plan allows a few questions per minute), so this is a pre-written offline answer. Try again in a minute.',
   'server-error': 'The app server had a problem, so this is a pre-written offline answer.',
   'server-unreachable': 'You are offline or the app server is not running, so this is a pre-written offline answer.',
-  'no-session': 'You signed in while offline, so the AI is not connected. Sign out and in again when the link is back. This is a pre-written offline answer.',
+  'no-session': 'You signed in while offline, so the AI is paused. Use “Reconnect” at the top of the page. This is a pre-written offline answer.',
 }

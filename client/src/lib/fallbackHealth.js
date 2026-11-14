@@ -1,6 +1,7 @@
 // Offline answers for AI 1 (Health Trends Assistant).
 // Pre-written, plain-language explanations for each measurement and each status.
 import { ESCALATE_MESSAGE, mentionsRedFlagSymptom } from './safety'
+import { METRICS } from './health'
 
 const TEXT = {
   bp: {
@@ -45,17 +46,65 @@ export function confidenceFor(count) {
   return 'moderate'
 }
 
+// General self-care ideas and common causes, used when the question asks for them.
+const TIPS = {
+  bp: 'Rest quietly for 5 minutes before measuring, drink water, go easy on salty food, and take short breaks from high workload.',
+  heartRate: 'Measure after sitting still for a few minutes, cut back on caffeine, and try slow breathing (in for 4, out for 6).',
+  temperature: 'Rest, drink fluids and measure again in a few hours. Note any other symptoms for the flight surgeon.',
+  sleep: 'Keep a regular sleep time, dim the lights an hour before, use the eye mask and earplugs, and avoid screens late.',
+  bloodSugar: 'Measure at the same time each day (for example before breakfast) and keep meal times regular.',
+}
+const CAUSES = {
+  bp: 'Common reasons include stress, poor sleep, salty food, caffeine, and fluid shifts in microgravity.',
+  heartRate: 'Common reasons include exercise, caffeine, stress, poor sleep, or being slightly dehydrated.',
+  temperature: 'Temperature changes with exercise, the time of day, a warm module, or the start of an illness.',
+  sleep: 'Noise, light, a shifted schedule, workload and worry often affect sleep on a mission.',
+  bloodSugar: 'Meal timing, exercise and stress all move blood sugar during the day.',
+}
+const INTENT = {
+  summary: /summary|doctor|surgeon|report/i,
+  tips: /what (should|can|do) i|tip|improve|advice|better|lower|raise|reduce|help me/i,
+  normal: /normal|range|healthy|\bok\b|okay|fine|good|bad|worry/i,
+  why: /why|cause|reason/i,
+}
+
 export function explainOffline(summary, question = '') {
   if (mentionsRedFlagSymptom(question)) return ESCALATE_MESSAGE
 
   const withData = summary.filter((m) => m.count > 0)
   if (!withData.length) {
-    return 'There are no readings yet. Add some measurements in the Health tab and I can explain them.'
+    return 'There are no readings yet. Add some measurements on this page and I can explain them.'
   }
 
   const asked = withData.filter((m) => KEYWORDS[m.type]?.test(question))
+  const wantsSummary = INTENT.summary.test(question)
+
+  // A question that names no measurement: say what can be asked, plus a one-line overview.
+  if (!asked.length && !wantsSummary) {
+    const watch = withData.filter((m) => m.status !== 'green')
+    return [
+      'Offline, I can explain each of your measurements. Try for example: "Is my blood pressure normal?", "Why is my sleep low?" or "What should I do about my heart rate?"',
+      watch.length
+        ? `Right now: ${watch.map((m) => `${m.label.toLowerCase()} ${m.status === 'red' ? 'is in the red range' : 'needs attention'}`).join(', ')}. Everything else is stable.`
+        : 'Right now all your latest readings are in the stable range.',
+      withData.some((m) => m.status === 'red') ? 'Because something is in the red range, please contact the flight surgeon.' : null,
+    ]
+      .filter(Boolean)
+      .join('\n\n')
+  }
+
   const list = asked.length ? asked : withData
-  const lines = list.map((m) => `${m.label}: latest ${m.latest}, ${m.direction} over the last week. ${TEXT[m.type][m.status] ?? ''}`)
+  const lines = list.map((m) => {
+    const band = METRICS[m.type].band
+    const parts = [`${m.label}: latest ${m.latest}, ${m.direction} over the last week.`]
+    if (INTENT.normal.test(question)) {
+      parts.push(m.type === 'bp' ? 'The normal range is 90–129 (top) and 60–84 (bottom) mmHg.' : m.type === 'sleep' ? 'The aim is 6.5 hours or more.' : `The normal range is ${band[0]}–${band[1]} ${METRICS[m.type].unit}.`)
+    }
+    parts.push(TEXT[m.type][m.status] ?? '')
+    if (INTENT.why.test(question)) parts.push(CAUSES[m.type])
+    if (INTENT.tips.test(question)) parts.push(`What can help: ${TIPS[m.type]}`)
+    return parts.filter(Boolean).join(' ')
+  })
 
   const minCount = Math.min(...list.map((m) => m.count))
   const hasRed = list.some((m) => m.status === 'red')
@@ -64,13 +113,8 @@ export function explainOffline(summary, question = '') {
       ? 'There are only a few readings, so this is a rough picture and may change.'
       : 'This is based on your recent readings and may not tell the whole story.'
 
-  const wantsSummary = /summary|doctor|surgeon|report/i.test(question)
-  let heading = null
-  if (wantsSummary) heading = 'Summary of recent readings (to share with the flight surgeon if you choose):'
-  else if (question && !asked.length) heading = 'I can only explain your measurements offline. Here is an overview:'
-
   return [
-    heading,
+    wantsSummary ? 'Summary of recent readings (to share with the flight surgeon if you choose):' : null,
     ...lines,
     hasRed ? 'Because something is in the red range, please contact the flight surgeon.' : null,
     unsure,

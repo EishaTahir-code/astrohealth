@@ -1,15 +1,17 @@
-import { useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Icon } from './Icons'
 import { FALLBACK_REASONS } from '../lib/api'
 
 // Simple question-and-answer box, shared by both assistants.
 // ask(question) must return { text, source, reason?, confidence? }.
 // tone: 'lavender' (health assistant) or 'periwinkle' (medication assistant).
-export default function Chat({ ask, placeholder, quickQuestions = [], intro, tone = 'lavender', icon = 'ai' }) {
+// request: { id, text } asks a question from outside (for example a status pill was clicked).
+export default function Chat({ ask, placeholder, quickQuestions = [], intro, tone = 'lavender', icon = 'ai', request }) {
   const [messages, setMessages] = useState([])
   const [question, setQuestion] = useState('')
   const [busy, setBusy] = useState(false)
   const inputId = useId()
+  const handled = useRef(null)
 
   async function send(q) {
     const text = q.trim()
@@ -24,6 +26,15 @@ export default function Chat({ ask, placeholder, quickQuestions = [], intro, ton
       setBusy(false)
     }
   }
+
+  useEffect(() => {
+    if (request?.text && handled.current !== request.id) {
+      handled.current = request.id
+      send(request.text)
+    }
+    // send is recreated every render; the request id decides when to ask
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [request])
 
   return (
     <div className={`chat-box tone-${tone}`}>
