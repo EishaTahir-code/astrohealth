@@ -12,6 +12,11 @@ db.version(1).stores({
   meta: 'key',
 })
 
+// Version 2 adds an audit log: every time a doctor opens an astronaut's profile.
+db.version(2).stores({
+  auditLog: '++id, doctor, astronautId, at',
+})
+
 // Runs a seeding function only once per device.
 // The check happens inside the transaction, so two calls at once can't both add data.
 export async function seedOnce(key, fn) {

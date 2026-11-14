@@ -30,7 +30,7 @@
 - [x] Set up local database
 - [ ] Set up authentication system
 - [ ] Create astronaut login
-- [ ] Create doctor login
+- [x] Create doctor login
 - [x] Create shared no-login interface
 - [ ] Implement offline data storage
 - [ ] Implement background sync when connection is available
@@ -93,15 +93,15 @@
 - [ ] Add astronaut control to pause or mute alerts
 
 ## Phase 8: Doctor dashboard
-- [ ] Build doctor login
-- [ ] Build astronaut list
-- [ ] Allow doctor to click astronaut name
-- [ ] Build astronaut profile page
+- [x] Build doctor login
+- [x] Build astronaut list
+- [x] Allow doctor to click astronaut name
+- [x] Build astronaut profile page
 - [ ] Display health, sleep, alertness, check-in trends
 - [ ] Display red-flag alerts and AI summaries
 - [ ] Add doctor notes and doctor-to-astronaut messaging
-- [ ] Restrict access to private astronaut content
-- [ ] Add audit logging for doctor access
+- [x] Restrict access to private astronaut content
+- [x] Add audit logging for doctor access
 
 ## Phase 9: The two AIs
 - [x] Set up `.env` with `GROQ_API_KEY` (and second key if using another provider)

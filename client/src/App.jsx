@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import Header from './components/Header'
-import Placeholder from './components/Placeholder'
 import Home from './pages/Home'
+import Doctor from './pages/Doctor'
 import MySpace from './pages/MySpace'
 import Garden from './pages/Garden'
 import { useRoute } from './lib/router'
@@ -18,7 +18,7 @@ export default function App() {
   let page
   if (section === 'me') page = <MySpace tab={sub} />
   else if (section === 'garden') page = <Garden />
-  else if (section === 'doctor') page = <div className="page"><Placeholder title="Doctor dashboard" /></div>
+  else if (section === 'doctor') page = <Doctor astronautId={sub} />
   else page = <Home />
 
   return (
