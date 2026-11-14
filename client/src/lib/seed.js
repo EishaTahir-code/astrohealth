@@ -142,7 +142,77 @@ async function seedCrewStatus() {
   ])
 }
 
+// FAKE data for the five crew members added later (Arjun, Hana, Tomás, Amara, Elena).
+// Separate seed names, so devices that already have the first demo data get these too.
+const NEW_CREW = {
+  //        sleep range  stress range  missed days      bp base   hr   sleep hours
+  a4: { sleep: [3, 4], stress: [2, 3], miss: [6], bp: [121, 79], hr: 70, hours: 7 },
+  a5: { sleep: [4, 5], stress: [1, 2], miss: [], bp: [112, 72], hr: 58, hours: 7.8 },
+  a6: { sleep: [2, 3], stress: [3, 4], miss: [2, 5, 9], bp: [126, 82], hr: 78, hours: 6.1 },
+  a7: { sleep: [4, 5], stress: [1, 3], miss: [11], bp: [118, 76], hr: 64, hours: 7.4 },
+  a8: { sleep: [3, 5], stress: [2, 3], miss: [3, 8], bp: [115, 74], hr: 67, hours: 7.1 },
+}
+
+async function seedNewCrewCheckIns() {
+  const rand = seededRandom(99)
+  const rows = []
+  for (const [userId, p] of Object.entries(NEW_CREW)) {
+    for (let i = 13; i >= 1; i--) {
+      if (p.miss.includes(i)) continue
+      rows.push({
+        userId, date: dayKey(daysAgo(i)), mood: pick(rand, 2, 5), stress: pick(rand, ...p.stress), energy: pick(rand, 2, 5),
+        sleepQuality: pick(rand, ...p.sleep), workload: pick(rand, 2, 4), notes: '', createdAt: daysAgo(i).getTime(), synced: true,
+      })
+    }
+  }
+  await db.checkIns.bulkAdd(rows)
+}
+
+async function seedNewCrewReadings() {
+  const rand = seededRandom(21)
+  const jitter = (n) => (rand() - 0.5) * 2 * n
+  const units = { bp: 'mmHg', heartRate: 'bpm', temperature: '°C', sleep: 'hours', bloodSugar: 'mg/dL' }
+  const rows = []
+  for (const [userId, p] of Object.entries(NEW_CREW)) {
+    for (let i = 14; i >= 1; i--) {
+      const at = daysAgo(i).getTime()
+      const add = (type, value, value2) => rows.push({ uid: `seed-${userId}-${type}-${i}`, userId, type, value, value2, unit: units[type], recordedAt: at, synced: true })
+      add('bp', Math.round(p.bp[0] + jitter(4)), Math.round(p.bp[1] + jitter(3)))
+      add('heartRate', Math.round(p.hr + jitter(4)))
+      add('temperature', +(36.7 + jitter(0.2)).toFixed(1))
+      add('sleep', +(p.hours + jitter(0.5)).toFixed(1))
+      add('bloodSugar', Math.round(95 + jitter(10)))
+    }
+  }
+  await db.readings.bulkAdd(rows)
+}
+
+async function seedNewCrewReaction() {
+  const plans = { a4: [81, 79, 83, 80], a5: [88, 86, 89, 87], a6: [77, 74, 72, 66], a7: [84, 85, 83], a8: [79, 81, 80] }
+  const rows = []
+  for (const [userId, scores] of Object.entries(plans)) {
+    scores.forEach((score, i) => {
+      rows.push({
+        uid: `seed-${userId}-rt-${i}`, userId, reactionTimeMs: Math.round(600 - (score / 100) * 350), accuracy: Math.min(100, score + 12),
+        consistency: Math.min(100, score + 5), alertnessScore: score, createdAt: daysAgo((scores.length - i) * 2).getTime(), synced: true,
+      })
+    })
+  }
+  await db.reactionTests.bulkAdd(rows)
+}
+
+async function seedNewCrewStatus() {
+  const counts = { a4: 7, a5: 7, a6: 5, a7: 7, a8: 6 }
+  await db.crewStatus.bulkPut(
+    Object.entries(counts).map(([userId, checkins7]) => ({ uid: userId, userId, stage: null, score: null, checkins7, supportAlerts: 'on', pausedUntil: null, greenhouseActive: false, updatedAt: daysAgo(1).getTime(), synced: true })),
+  )
+}
+
 export async function ensureDemoData() {
+  await seedOnce('seed:crew2:checkIns', seedNewCrewCheckIns)
+  await seedOnce('seed:crew2:readings', seedNewCrewReadings)
+  await seedOnce('seed:crew2:reaction', seedNewCrewReaction)
+  await seedOnce('seed:crew2:status', seedNewCrewStatus)
   await seedOnce('seed:crewStatus', seedCrewStatus)
   await seedOnce('seed:checkIns', seedCheckIns)
   await seedOnce('seed:readings', seedReadings)

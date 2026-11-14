@@ -35,8 +35,9 @@ export async function healthAssistant(req, res) {
     return res.json({ answer: ESCALATE_MESSAGE, source: 'safety' });
   }
 
-  const { apiKey, model } = getAiConfig('health');
-  if (!apiKey) return res.json({ fallback: true, reason: 'no-key' });
+  const { apiKey, model, problem } = getAiConfig();
+  if (problem === 'missing') return res.json({ fallback: true, reason: 'no-key' });
+  if (problem === 'example') return res.json({ fallback: true, reason: 'example-key' });
 
   try {
     const text = await askGroq({
@@ -48,6 +49,6 @@ export async function healthAssistant(req, res) {
     res.json({ answer: filterAnswer(text), source: 'ai' });
   } catch (err) {
     console.warn('AI 1 failed, using fallback:', err.message);
-    res.json({ fallback: true, reason: /rate limit/i.test(err.message) ? 'ai-busy' : 'ai-error' });
+    res.json({ fallback: true, reason: err.code === 'bad-key' ? 'bad-key' : /rate limit/i.test(err.message) ? 'ai-busy' : 'ai-error' });
   }
 }

@@ -168,13 +168,15 @@ export default function Today({ user }) {
               <li key={m.type}>
                 <span>{METRICS[m.type].label}</span>
                 <span className="num">{m.latest ?? '–'}</span>
-                <StatusPill status={m.status}>{STATUS_LABEL[m.status]}</StatusPill>
+                <StatusPill status={m.status} onAsk={() => (window.location.hash = `#/me/health/ask-${m.type}`)}>
+                  {STATUS_LABEL[m.status]}
+                </StatusPill>
               </li>
             ))}
           </ul>
           <div className="row">
             <a className="text-link" href="#/me/health">Open health graphs</a>
-            <a className="text-link" href="#/me/ai">Ask the health assistant</a>
+            <a className="text-link" href="#/me/health">Ask the health assistant</a>
           </div>
         </section>
 

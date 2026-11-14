@@ -15,7 +15,8 @@ export default function Greenhouse({ me }) {
   const [choosing, setChoosing] = useState(false)
   if (!plants) return <p className="muted">Loading…</p>
 
-  const growing = plants.find((p) => p.status === 'growing')
+  // (plants from an older version of the library are ignored)
+  const growing = plants.find((p) => p.status === 'growing' && plantInfo(p))
   const harvested = plants.filter((p) => p.status === 'harvested')
 
   if (!growing || choosing) {

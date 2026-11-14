@@ -1,7 +1,5 @@
-// Local search of medicines.json (the ISS medical kit list). Works fully offline, no AI needed.
-// (The server has a copy of this logic in server/med-search.js.)
+// Search of medicines.json (the ISS medical kit list) for the Medication page. Works fully offline.
 import data from '../data/medicines.json'
-import { ESCALATE_MESSAGE, mentionsRedFlagSymptom } from './safety'
 
 export const MEDICINES = data.medicines
 export const MED_NOTICE = data.notice
@@ -35,28 +33,4 @@ export function searchMedicines(question, list = MEDICINES) {
     .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score)
     .map((s) => s.m)
-}
-
-export const NOT_ON_LIST = "I don't have that medicine on the spacecraft list. Please contact the flight surgeon."
-
-export function describe(m) {
-  return [
-    `${m.name}: ${m.strength}, ${m.route.toLowerCase()} ${m.unit}.`,
-    `Used for: ${m.usedFor.join(', ')}.`,
-    m.comments ? `List says: ${m.comments}` : null,
-    `Possible side effects: ${m.sideEffects}.`,
-    `Stored in: ${m.pack}, location ${m.location}.`,
-    m.access === 'crew' ? 'Crew self-care pack. Check with the flight surgeon if unsure.' : 'Used only when the flight surgeon directs it.',
-  ]
-    .filter(Boolean)
-    .join('\n')
-}
-
-export function answerOffline(question) {
-  if (mentionsRedFlagSymptom(question)) return ESCALATE_MESSAGE
-  const found = searchMedicines(question).slice(0, 3)
-  if (!found.length) {
-    return `${NOT_ON_LIST}\n\nTry asking about a symptom (for example "headache" or "motion sickness") or a medicine name.`
-  }
-  return `From the spacecraft list (${MED_NOTICE}):\n\n${found.map(describe).join('\n\n')}`
 }

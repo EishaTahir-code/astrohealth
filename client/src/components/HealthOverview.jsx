@@ -3,23 +3,23 @@ import { METRIC_KEYS, STATUS_ACTION, detectFlags, groupReadings } from '../lib/h
 
 // Red-flag alerts + one trend graph per measurement.
 // Used by the astronaut's Health tab and by the doctor dashboard.
-export default function HealthOverview({ readings, forDoctor = false }) {
+export default function HealthOverview({ readings, forDoctor = false, onAsk }) {
   const groups = groupReadings(readings)
   const flags = detectFlags(readings)
 
   return (
     <div className="stack">
-      <RedFlags flags={flags} forDoctor={forDoctor} />
+      <RedFlags flags={flags} forDoctor={forDoctor} onAsk={onAsk} />
       <div className="grid grid-2">
         {METRIC_KEYS.map((type) => (
-          <TrendChart key={type} type={type} readings={groups[type]} />
+          <TrendChart key={type} type={type} readings={groups[type]} onAsk={forDoctor ? undefined : onAsk} />
         ))}
       </div>
     </div>
   )
 }
 
-export function RedFlags({ flags, forDoctor }) {
+export function RedFlags({ flags, forDoctor, onAsk }) {
   if (!flags.length) {
     return (
       <div className="alert green" role="status">
@@ -35,7 +35,16 @@ export function RedFlags({ flags, forDoctor }) {
         <div className="alert red">
           <h3 className="alert-title">Red flag{reds.length > 1 ? 's' : ''}</h3>
           <ul className="alert-list">
-            {reds.map((f) => <li key={f.type}>{f.message}</li>)}
+            {reds.map((f) => (
+              <li key={f.type}>
+                {f.message}{' '}
+                {onAsk && !forDoctor && (
+                  <button type="button" className="link-btn small" onClick={() => onAsk(f.type, f.reading)}>
+                    Ask the assistant
+                  </button>
+                )}
+              </li>
+            ))}
           </ul>
           <p className="flush">
             <strong>{forDoctor ? 'Suggested review: ' : 'What to do: '}</strong>

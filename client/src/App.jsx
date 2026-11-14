@@ -10,7 +10,7 @@ const MySpace = lazy(() => import('./pages/MySpace'))
 const Doctor = lazy(() => import('./pages/Doctor'))
 const Garden = lazy(() => import('./pages/Garden'))
 
-const ASTRONAUT_SECTIONS = ['checkin', 'health', 'ai', 'meds', 'care', 'family', 'greenhouse', 'reaction', 'settings', 'help']
+const ASTRONAUT_SECTIONS = ['checkin', 'health', 'meds', 'care', 'family', 'greenhouse', 'reaction', 'settings', 'help']
 
 // Pages:
 //   #/                 sign in (first screen). Signed-in people go to their dashboard.
@@ -18,7 +18,7 @@ const ASTRONAUT_SECTIONS = ['checkin', 'health', 'ai', 'meds', 'care', 'family',
 //   #/doctor/<page>    doctor dashboard (needs a doctor sign-in)
 //   #/garden           shared crew garden (no sign-in needed)
 export default function App() {
-  const [section, sub] = useRoute()
+  const [section, sub, extra] = useRoute()
   const user = useSession()
 
   // Adds the fake crew data the first time the app opens on this device.
@@ -56,11 +56,12 @@ export default function App() {
 
   if (section === 'me') {
     if (user?.role !== 'astronaut') return <SignIn key="astronaut" want="astronaut" />
-    const tab = ASTRONAUT_SECTIONS.includes(sub) ? sub : 'today'
+    // (the old separate Health assistant page is now part of Health)
+    const tab = sub === 'ai' ? 'health' : ASTRONAUT_SECTIONS.includes(sub) ? sub : 'today'
     return (
       <AppShell user={user} active={tab}>
         <Suspense fallback={loading}>
-          <MySpace tab={tab} user={user} />
+          <MySpace tab={tab} user={user} extra={extra} />
         </Suspense>
       </AppShell>
     )

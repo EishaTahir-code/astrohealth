@@ -4,7 +4,8 @@
 // not medical advice. In a real mission the flight surgeons set them.
 
 export const METRICS = {
-  bp: { label: 'Blood pressure', unit: 'mmHg', band: [100, 130], digits: 0 },
+  // band = the green ("stable") range. Blood pressure has one for the top and one for the bottom number.
+  bp: { label: 'Blood pressure', unit: 'mmHg', band: [90, 129], band2: [60, 84], digits: 0 },
   heartRate: { label: 'Heart rate', unit: 'bpm', band: [50, 100], digits: 0 },
   temperature: { label: 'Body temperature', unit: '°C', band: [36.1, 37.5], digits: 1 },
   sleep: { label: 'Sleep', unit: 'hours', band: [6.5, 10], digits: 1 },

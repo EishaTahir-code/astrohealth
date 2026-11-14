@@ -41,7 +41,7 @@ export default function Garden({ user }) {
           Each crew member tends a flower bed. Check-ins, rest and greenhouse care make it bloom; it wilts when routines slip. It shows
           general well-being only, never health numbers, moods or notes.
         </p>
-        <span className="tag dim garden-hint">[ Move through the garden to stir the flowers. Hover or tap a bed to see how it is doing. ]</span>
+        <span className="tag dim garden-hint">[ Drag sideways to explore every bed. Move through the flowers to stir them. Hover or tap a bed to see how it is doing. ]</span>
       </header>
 
       <div className="garden-frame">

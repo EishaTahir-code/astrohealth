@@ -5,7 +5,7 @@
 // Groq sometimes retires models (the old default "llama-3.3-70b-versatile"
 // was removed). If the chosen model no longer exists, we try the next model
 // in BACKUP_MODELS and remember the one that worked.
-import { BACKUP_MODELS } from './keys.js';
+import { BACKUP_MODELS, refusedKeys } from './keys.js';
 
 const URL = 'https://api.groq.com/openai/v1/chat/completions';
 
@@ -65,6 +65,13 @@ async function callModel({ apiKey, model, system, user }) {
     const code = body?.error?.code;
     if (res.status === 404 || code === 'model_not_found' || code === 'model_decommissioned') {
       return { modelMissing: true };
+    }
+    if (res.status === 401 || res.status === 403) {
+      // Groq does not accept this key (mistyped, deleted, or still the example text).
+      refusedKeys.add(apiKey);
+      const err = new Error('Groq refused the API key');
+      err.code = 'bad-key';
+      throw err;
     }
     if (res.status === 429) {
       const wait = Number(res.headers.get('retry-after')) || Number(/try again in ([\d.]+)s/.exec(body?.error?.message ?? '')?.[1]) || 5;
