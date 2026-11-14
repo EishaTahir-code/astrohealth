@@ -23,8 +23,19 @@ const DEFAULT_MODEL = 'openai/gpt-oss-120b'
 const BACKUP_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b']
 let refused = '' // a key Groq turned down (until the function restarts)
 
+// The key's secret name should be GROQ_API_KEY. A Groq key saved under another name (for example
+// "orbloom") also works: Groq keys always start with "gsk_".
+function findKey() {
+  const named = (Deno.env.get('GROQ_API_KEY') ?? '').trim()
+  if (named) return named
+  for (const value of Object.values(Deno.env.toObject())) {
+    if (/^gsk_/.test(value.trim())) return value.trim()
+  }
+  return ''
+}
+
 function aiConfig() {
-  const apiKey = (Deno.env.get('GROQ_API_KEY') ?? '').trim()
+  const apiKey = findKey()
   const model = (Deno.env.get('GROQ_MODEL') ?? '').trim() || DEFAULT_MODEL
   let problem: string | null = null
   if (!apiKey) problem = 'missing'
