@@ -1,0 +1,12 @@
+{
+  "name": "orbloom",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Offline-first astronaut health companion (demo).",
+  "type": "module",
+  "scripts": {
+    "setup": "npm install --prefix server && npm install --prefix client",
+    "dev": "node scripts/dev.js",
+    "build": "npm run build --prefix client"
+  }
+}
