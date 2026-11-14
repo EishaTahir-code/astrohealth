@@ -48,14 +48,14 @@
 - [ ] Add emergency escalation flow
 
 ## Phase 4: Reaction game
-- [ ] Design reaction-time game
-- [ ] Build reaction-test screen
-- [ ] Record reaction time, accuracy, consistency
-- [ ] Store game results offline
-- [ ] Build alertness graph
-- [ ] Detect performance decline
-- [ ] Add recommendations for low alertness
-- [ ] Add red-flag escalation for severe decline
+- [x] Design reaction-time game
+- [x] Build reaction-test screen
+- [x] Record reaction time, accuracy, consistency
+- [x] Store game results offline
+- [x] Build alertness graph
+- [x] Detect performance decline
+- [x] Add recommendations for low alertness
+- [x] Add red-flag escalation for severe decline
 
 ## Phase 5: Family messaging
 - [ ] Build Family Space screen
