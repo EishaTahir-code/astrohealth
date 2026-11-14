@@ -16,17 +16,17 @@ export default function AlertnessChart({ tests, forDoctor = false }) {
 
   return (
     <section className="card">
-      <div className="row" style={{ justifyContent: 'space-between' }}>
-        <h3 style={{ margin: 0 }}>Alertness</h3>
+      <div className="row spread">
+        <h3 className="chart-title">Alertness</h3>
         <StatusPill status={decline.status}>{LABEL[decline.status]}</StatusPill>
       </div>
-      <p className="muted small" style={{ margin: '0.25rem 0 0.5rem' }}>
+      <p className="muted small chart-sub">
         {sorted.length
           ? `Latest score ${decline.latest ?? sorted[sorted.length - 1].alertnessScore} out of 100${decline.baseline ? `, usual about ${decline.baseline}` : ''}.`
           : 'No tests yet.'}
       </p>
       {sorted.length > 0 && (
-        <div role="img" aria-label={`Alertness score over ${sorted.length} tests. ${LABEL[decline.status]}.`} style={{ width: '100%', height: 190 }}>
+        <div role="img" aria-label={`Alertness score over ${sorted.length} tests. ${LABEL[decline.status]}.`} className="chart-box">
           <ResponsiveContainer>
             <LineChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>
               <CartesianGrid stroke="var(--line)" strokeDasharray="3 3" vertical={false} />
@@ -42,12 +42,12 @@ export default function AlertnessChart({ tests, forDoctor = false }) {
         </div>
       )}
       {!forDoctor && decline.status !== 'green' && (
-        <div className={`alert ${decline.status === 'none' ? 'info' : decline.status} small`} style={{ marginTop: '0.75rem' }}>
+        <div className={`alert ${decline.status === 'none' ? 'info' : decline.status} small spaced-sm`}>
           {ALERTNESS_ADVICE[decline.status]}
         </div>
       )}
       {forDoctor && decline.status === 'red' && (
-        <div className="alert red small" style={{ marginTop: '0.75rem' }}>
+        <div className="alert red small spaced-sm">
           Large alertness drop. Suggest reviewing workload and high-risk tasks with the astronaut.
         </div>
       )}

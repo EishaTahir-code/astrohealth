@@ -1,57 +1,85 @@
-// Placeholder flower bed drawn with SVG. The look changes with the garden stage.
+// One crew member's raised flower bed, seen from above (like the beds in the
+// design image). How full it is depends on the garden stage:
+// empty -> wilting -> needs care -> growing -> blooming.
+// The bed has 18 planting spots (6 columns x 3 rows).
+// Planting order: spread out so even a few plants cover the whole bed.
+const ORDER = [7, 16, 2, 11, 0, 14, 9, 4, 17, 6, 12, 1, 15, 10, 3, 13, 5, 8]
+
 const LOOK = {
-  empty: { count: 0 },
-  wilting: { count: 3, height: 34, size: 6, droop: 16, petal: 'var(--petal-dry)', leaf: false },
-  needsCare: { count: 3, height: 44, size: 7, droop: 6, petal: null, leaf: true },
-  growing: { count: 4, height: 58, size: 9, droop: 0, petal: null, leaf: true },
-  blooming: { count: 5, height: 72, size: 11, droop: 0, petal: null, leaf: true },
+  empty: { plants: 0 },
+  wilting: { plants: 6, flowers: 3, scale: 0.72, dry: true },
+  needsCare: { plants: 9, flowers: 3, scale: 0.82 },
+  growing: { plants: 13, flowers: 8, scale: 0.95 },
+  blooming: { plants: 18, flowers: 18, scale: 1.08 },
 }
 
-export default function FlowerBed({ stage, color = '#d77fa1', label }) {
+// Small fixed "random" offsets so beds look natural but never change between renders.
+const jitter = (i, n) => (((i * 9301 + n * 49297) % 233280) / 233280 - 0.5) * 6
+
+export default function FlowerBed({ stage, color = 'var(--lavender)', label, className }) {
   const look = LOOK[stage] ?? LOOK.empty
-  const xs = spread(look.count)
+  const planted = ORDER.slice(0, look.plants)
+  const flowering = new Set(planted.slice(0, look.flowers))
 
   return (
-    <svg viewBox="0 0 240 140" role="img" aria-label={label} style={{ width: '100%', height: 'auto', display: 'block' }}>
-      {/* soil */}
-      <rect x="10" y="108" width="220" height="24" rx="8" fill="var(--soil)" />
-      <rect x="10" y="108" width="220" height="6" rx="3" fill="var(--soil)" opacity="0.6" />
-      {look.count === 0 &&
-        [50, 95, 145, 190].map((x) => <ellipse key={x} cx={x} cy="112" rx="5" ry="2.2" fill="var(--bg)" opacity="0.5" />)}
-      {xs.map((x, i) => (
-        <Flower
-          key={i}
-          x={x}
-          h={look.height + (i % 2 ? -6 : 4)}
-          size={look.size}
-          droop={look.droop * (i % 2 ? -1 : 1)}
-          petal={look.petal ?? color}
-          leaf={look.leaf}
-        />
+    <svg viewBox="0 0 260 150" role="img" aria-label={label} className={`flowerbed ${className ?? ''}`}>
+      {/* bed wall and soil */}
+      <rect x="3" y="3" width="254" height="144" rx="14" fill="var(--bed)" />
+      <rect x="3" y="3" width="254" height="144" rx="14" fill="none" stroke="var(--bed-edge)" strokeWidth="2" />
+      <rect x="13" y="13" width="234" height="124" rx="8" fill="var(--soil)" />
+      {[38, 75, 112].map((y) => (
+        <path key={y} d={`M24 ${y} H236`} stroke="var(--soil-line)" strokeWidth="2" strokeDasharray="2 7" strokeLinecap="round" />
       ))}
+
+      {look.plants === 0 &&
+        [40, 92, 144, 196].map((x, i) => (
+          <g key={x} fill="var(--seed)">
+            <ellipse cx={x} cy={i % 2 ? 75 : 38} rx="3" ry="2" />
+            <ellipse cx={x + 22} cy={i % 2 ? 112 : 75} rx="3" ry="2" />
+          </g>
+        ))}
+
+      {planted.map((spot) => {
+        const col = spot % 6
+        const row = Math.floor(spot / 6)
+        const x = 32 + col * 39 + jitter(spot, 1)
+        const y = 38 + row * 37 + jitter(spot, 2)
+        return (
+          <Plant
+            key={spot}
+            x={x}
+            y={y}
+            scale={look.scale}
+            dry={look.dry}
+            petal={look.dry ? 'var(--petal-dry)' : color}
+            flower={flowering.has(spot)}
+            turn={spot * 23}
+          />
+        )
+      })}
     </svg>
   )
 }
 
-function spread(n) {
-  if (!n) return []
-  const gap = 200 / (n + 1)
-  return Array.from({ length: n }, (_, i) => 20 + gap * (i + 1))
-}
-
-function Flower({ x, h, size, droop, petal, leaf }) {
-  const top = 108 - h
-  const hx = x + droop
-  const hy = top + Math.abs(droop) * 0.8
+function Plant({ x, y, scale, dry, petal, flower, turn }) {
+  const leaf = dry ? 'var(--leaf-dry)' : 'var(--stem)'
+  const leaf2 = dry ? 'var(--leaf-dry-2)' : 'var(--stem-2)'
   return (
-    <g>
-      <path d={`M${x} 108 Q ${x} ${top + h / 3} ${hx} ${hy}`} stroke="var(--stem)" strokeWidth="3" fill="none" strokeLinecap="round" />
-      {leaf && <ellipse cx={x + 7} cy={108 - h / 3} rx="7" ry="3" fill="var(--stem)" transform={`rotate(-30 ${x + 7} ${108 - h / 3})`} />}
-      {[0, 72, 144, 216, 288].map((a) => {
-        const r = (a * Math.PI) / 180
-        return <circle key={a} cx={hx + Math.cos(r) * size * 0.9} cy={hy + Math.sin(r) * size * 0.9} r={size * 0.7} fill={petal} />
-      })}
-      <circle cx={hx} cy={hy} r={size * 0.55} fill="#f2c94c" />
+    <g transform={`translate(${x} ${y}) scale(${scale}) rotate(${turn})`}>
+      {[15, 105, 195, 285].map((a) => (
+        <ellipse key={a} cx="9" cy="0" rx="9.5" ry={dry ? 3.2 : 4.6} transform={`rotate(${a})`} fill={leaf} />
+      ))}
+      {[60, 150, 240, 330].map((a) => (
+        <ellipse key={a} cx="7" cy="0" rx="7" ry={dry ? 2.6 : 3.8} transform={`rotate(${a})`} fill={leaf2} />
+      ))}
+      {flower && (
+        <g>
+          {[0, 60, 120, 180, 240, 300].map((a) => (
+            <circle key={a} cx="5.6" cy="0" r={dry ? 3.4 : 4.6} transform={`rotate(${a})`} fill={petal} />
+          ))}
+          <circle r={dry ? 2.4 : 3.1} fill={dry ? 'var(--leaf-dry-2)' : 'var(--flower-heart)'} />
+        </g>
+      )}
     </g>
   )
 }

@@ -15,11 +15,11 @@ export default function TrendChart({ type, readings }) {
 
   return (
     <section className="card">
-      <div className="row" style={{ justifyContent: 'space-between' }}>
-        <h3 style={{ margin: 0 }}>{m.label}</h3>
+      <div className="row spread">
+        <h3 className="chart-title">{m.label}</h3>
         <StatusPill status={status}>{STATUS_LABEL[status]}</StatusPill>
       </div>
-      <p className="muted small" style={{ margin: '0.25rem 0 0.5rem' }}>
+      <p className="muted small chart-sub">
         Latest: {formatValue(latest)}, from {readings.length} readings
       </p>
       {!readings.length ? (
@@ -28,7 +28,7 @@ export default function TrendChart({ type, readings }) {
         <div
           role="img"
           aria-label={`${m.label} trend over ${readings.length} readings. Latest ${formatValue(latest)}, ${STATUS_LABEL[status]}.`}
-          style={{ width: '100%', height: 190 }}
+          className="chart-box"
         >
           <ResponsiveContainer>
             <LineChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>

@@ -65,7 +65,7 @@ function ReadingForm() {
   }
 
   const field = (key, label, hint, step = 'any') => (
-    <div className="field" style={{ marginBottom: '0.5rem' }}>
+    <div className="field tight">
       <label htmlFor={key}>
         {label} <span className="hint">{hint}</span>
       </label>
@@ -79,7 +79,7 @@ function ReadingForm() {
         aria-invalid={Boolean(errors[key])}
         aria-describedby={errors[key] ? `${key}-err` : undefined}
       />
-      {errors[key] && <span id={`${key}-err`} className="small" style={{ color: 'var(--bad)' }}>{errors[key]}</span>}
+      {errors[key] && <span id={`${key}-err`} className="small field-error">{errors[key]}</span>}
     </div>
   )
 
@@ -87,7 +87,7 @@ function ReadingForm() {
     <form className="card" onSubmit={save} noValidate>
       <h2>Add today&apos;s measurements</h2>
       <p className="muted small">Fill in only what you measured. Everything is optional.</p>
-      <div className="grid grid-3" style={{ gap: '0 1rem' }}>
+      <div className="grid grid-3 form-grid">
         {field('sys', 'Blood pressure, top', '(mmHg)', '1')}
         {field('dia', 'Blood pressure, bottom', '(mmHg)', '1')}
         {field('heartRate', 'Heart rate', '(bpm)', '1')}
@@ -95,11 +95,11 @@ function ReadingForm() {
         {field('sleep', 'Sleep last night', '(hours)')}
         {field('bloodSugar', 'Blood sugar', '(mg/dL)', '1')}
       </div>
-      <div className="row" style={{ marginTop: '0.5rem' }}>
+      <div className="row form-actions">
         <button className="btn" type="submit">Save measurements</button>
         <span aria-live="polite">
           {saved && <span className="toast">{saved}</span>}
-          {errors.form && <span style={{ color: 'var(--bad)' }}>{errors.form}</span>}
+          {errors.form && <span className="field-error">{errors.form}</span>}
         </span>
       </div>
     </form>

@@ -12,31 +12,32 @@ export default function Medication() {
   }
 
   return (
-    <div className="grid grid-2" style={{ alignItems: 'start' }}>
+    <div className="grid grid-2 top">
       <section className="card">
-        <h2>Medication assistant</h2>
-        <p className="muted small">Ask about medicines on the spacecraft list. It cannot answer about anything else.</p>
+        <h2>Ask about a medicine</h2>
+        <p className="muted small">Try one of the suggestions or type your own question.</p>
         <Chat
+          tone="periwinkle"
+          icon="meds"
           ask={ask}
           placeholder="For example: what can I use for motion sickness?"
           quickQuestions={['What is on board for a headache?', 'Do we have aspirin?', 'Tell me about meclizine']}
           intro="Hi. I only know the medicines on the spacecraft list. For anything else, or if you feel unwell, please contact the flight surgeon."
         />
-        <p className="disclaimer" style={{ marginTop: '1rem' }}>
+        <p className="disclaimer spaced">
           {DISCLAIMER} Your medication questions stay private on this device.
         </p>
       </section>
 
       <section className="card quiet">
-        <div className="alert yellow small" style={{ marginBottom: '1rem' }}>
+        <div className="alert yellow small sample-note">
           <strong>{MED_NOTICE}.</strong> These 5 entries are made up for the demo and have no doses on purpose.
         </div>
         <h2>Spacecraft medicine list</h2>
-        <ul style={{ paddingLeft: '1.1rem', margin: 0 }}>
+        <ul className="med-list">
           {MEDICINES.map((m) => (
-            <li key={m.name} style={{ marginBottom: '0.5rem' }}>
+            <li key={m.name}>
               <strong>{m.name}</strong>
-              <br />
               <span className="muted small">Used for: {m.usedFor.join(', ')}</span>
             </li>
           ))}

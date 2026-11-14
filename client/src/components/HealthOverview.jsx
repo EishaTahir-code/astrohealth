@@ -33,11 +33,11 @@ export function RedFlags({ flags, forDoctor }) {
     <div className="stack" role="status">
       {reds.length > 0 && (
         <div className="alert red">
-          <h3 style={{ marginBottom: '0.35rem' }}>Red flag{reds.length > 1 ? 's' : ''}</h3>
-          <ul style={{ margin: '0 0 0.5rem', paddingLeft: '1.2rem' }}>
+          <h3 className="alert-title">Red flag{reds.length > 1 ? 's' : ''}</h3>
+          <ul className="alert-list">
             {reds.map((f) => <li key={f.type}>{f.message}</li>)}
           </ul>
-          <p style={{ margin: 0 }}>
+          <p className="flush">
             <strong>{forDoctor ? 'Suggested review: ' : 'What to do: '}</strong>
             {forDoctor ? 'Contact the astronaut and review against mission protocol.' : STATUS_ACTION.red}
           </p>
@@ -45,11 +45,11 @@ export function RedFlags({ flags, forDoctor }) {
       )}
       {yellows.length > 0 && (
         <div className="alert yellow">
-          <h3 style={{ marginBottom: '0.35rem' }}>Needs attention</h3>
-          <ul style={{ margin: '0 0 0.5rem', paddingLeft: '1.2rem' }}>
+          <h3 className="alert-title">Needs attention</h3>
+          <ul className="alert-list">
             {yellows.map((f) => <li key={f.type}>{f.message}</li>)}
           </ul>
-          {!forDoctor && <p style={{ margin: 0 }}>{STATUS_ACTION.yellow}</p>}
+          {!forDoctor && <p className="flush">{STATUS_ACTION.yellow}</p>}
         </div>
       )}
     </div>

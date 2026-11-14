@@ -13,8 +13,22 @@ export function mentionsRedFlagSymptom(text) {
 }
 
 // Phrases that sound like a diagnosis. If the AI uses them, we replace the answer.
-const DIAGNOSIS =
-  /\byou (definitely |clearly |probably |likely )?(have|are suffering from|are diagnosed with)\b|\b(my|the) diagnosis is\b|\byou are (hypertensive|diabetic|sick with)\b/i
+// Only matches "you have" + a condition name, so normal sentences such as
+// "you have 14 readings" or "you have been sleeping less" are not blocked.
+const CONDITIONS =
+  '(?:hypertension|hypotension|high blood pressure|low blood pressure|diabetes|prediabetes|an? infection|infection|' +
+  'heart disease|a heart condition|an? arrhythmia|arrhythmia|tachycardia|bradycardia|a fever|fever|covid|the flu|flu|' +
+  'insomnia|sleep apnea|apnea|depression|anxiety|an? anxiety disorder|anemia|anaemia|cancer|' +
+  'an? (?:disease|disorder|syndrome|illness|medical condition|condition)|(?:a |an )?\\w+ (?:disease|disorder|syndrome))'
+const DIAGNOSIS = new RegExp(
+  [
+    `\\byou(?:'ve| have)? (?:definitely |clearly |probably |likely |may |might |could )?(?:have|have got|are developing|are suffering from|(?:have )?been diagnosed with) ${CONDITIONS}\\b`,
+    `\\b(?:indicates?|signals?|means|confirms?|shows?) (?:that )?(?:you (?:have|are developing) )?(?:developing |early |the onset of )?${CONDITIONS}\\b`,
+    '\\b(?:my|the|your) diagnosis is\\b',
+    '\\byou are (?:hypertensive|diabetic|depressed|sick with)\\b',
+  ].join('|'),
+  'i',
+)
 
 // Specific doses (e.g. "500 mg", "2 tablets"). The medicine list in this demo has no doses,
 // so any dose in an answer would be made up.
