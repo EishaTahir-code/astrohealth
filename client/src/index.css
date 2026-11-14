@@ -613,43 +613,87 @@ td.num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
 .reaction-pad[data-phase='go'] .pad-petal { fill: rgba(243, 246, 234, 0.85); stroke: var(--bone); filter: drop-shadow(0 0 8px rgba(223, 233, 154, 0.9)); }
 .reaction-pad[data-phase='go'] .pad-heart { fill: var(--lime); }
 
-/* ---------- Crew garden: the interactive meadow ---------- */
-.garden-hero {
-  --mx: 0;
-  --my: 0;
+/* ---------- Crew garden: the forest garden scene ---------- */
+.garden-head { padding-bottom: 1.4rem; }
+.garden-head p { color: var(--muted); max-width: 62ch; }
+.garden-hint { display: block; margin-top: 0.6rem; }
+.garden-frame { margin: 0 1rem; }
+.garden-scene {
   position: relative;
-  height: clamp(480px, 76vh, 740px);
-  margin: 1rem 1rem 0;
+  height: clamp(560px, 78vh, 820px);
   border-radius: 28px;
   overflow: hidden;
   border: 1px solid var(--line);
-  background: #03070f;
+  background: #07110c;
   touch-action: pan-y; /* vertical swipes still scroll the page; sideways drags stir the flowers */
 }
-.meadow { position: absolute; inset: 0; }
-.meadow canvas { display: block; width: 100%; height: 100%; }
-.garden-hero-copy {
+.garden-scene canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.garden-overlay { position: absolute; inset: 0; pointer-events: none; will-change: transform; }
+
+/* wooden name signs: always visible */
+.bed-sign {
   position: absolute;
-  top: clamp(1.4rem, 4vw, 3rem);
-  left: clamp(1.2rem, 4vw, 3.4rem);
-  right: 1.2rem;
-  max-width: 34rem;
+  transform: translate(-50%, -100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: #f1ead8;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.bed-sign .board {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 1rem 0.55rem 0.7rem;
+  border-radius: 7px;
+  border: 1px solid #4d3b2b;
+  background:
+    repeating-linear-gradient(177deg, rgba(255, 240, 220, 0.04) 0 2px, transparent 2px 7px),
+    linear-gradient(180deg, #3d2e23, #261c15);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 240, 220, 0.1);
+  transform: rotate(var(--tilt, 0deg));
+  transition: box-shadow 0.2s ease;
+}
+.bed-sign .board-text { display: grid; text-align: left; line-height: 1.05; }
+.bed-sign strong { font-family: var(--font-display); font-weight: 400; font-size: 1.45rem; color: #f3ecd9; white-space: nowrap; }
+.bed-sign em { font-family: var(--font-display); font-size: 1rem; color: #cfc2a8; white-space: nowrap; }
+.bed-sign .posts { display: flex; gap: 3.2rem; }
+.bed-sign .posts i { display: block; width: 6px; height: 26px; background: linear-gradient(90deg, #2a1f17, #3a2b20); border-radius: 0 0 2px 2px; }
+.bed-sign:hover .board, .bed-sign.open .board, .bed-sign:focus-visible .board {
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(223, 233, 154, 0.55), 0 0 26px rgba(223, 233, 154, 0.22);
+}
+.bed-sign:focus-visible { outline: none; }
+
+/* bed details: only on hover, focus or tap */
+.bed-pop {
+  position: absolute;
+  transform: translate(-50%, 8px) scale(0.97);
+  width: min(290px, 78vw);
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  padding: 0.9rem 1.05rem;
+  border-radius: 14px;
+  border: 1px solid rgba(223, 233, 154, 0.5);
+  background: rgba(8, 16, 12, 0.9);
+  box-shadow: 0 0 30px rgba(223, 233, 154, 0.14), 0 14px 32px rgba(0, 0, 0, 0.65);
+  opacity: 0;
+  visibility: hidden;
   pointer-events: none;
-  transform: translate(calc(var(--mx) * -18px), calc(var(--my) * -10px));
-  transition: transform 0.25s ease-out;
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+  z-index: 2;
 }
-.garden-hero-copy h1 {
-  font-size: clamp(3.4rem, 2rem + 6vw, 7.4rem);
-  line-height: 0.92;
-  margin: 0.4rem 0 1rem;
-  /* layered shadow, like extruded lettering, in the night palette */
-  text-shadow: 2px 2px 0 var(--teal), 4px 4px 0 rgba(42, 106, 128, 0.7), 6px 6px 0 rgba(42, 106, 128, 0.4), 0 0 40px rgba(5, 11, 20, 0.9);
-}
-.garden-hero-copy p { color: var(--ink); max-width: 30rem; text-shadow: 0 1px 12px rgba(5, 11, 20, 0.95); }
-.garden-hint { display: block; margin-top: 0.8rem; }
-.garden-page .page { padding-top: 1.6rem; }
-.garden-plot .card.picked { border-color: var(--lime); box-shadow: 0 0 0 1px var(--lime), 0 0 30px rgba(223, 233, 154, 0.15); }
-.garden-plot .card:focus { outline: none; }
+.bed-pop.show { opacity: 1; visibility: visible; transform: translate(-50%, 0) scale(1); }
+.bed-pop .pop-icon { flex: none; }
+.bed-pop > span { display: grid; gap: 0.3rem; }
+.bed-pop strong { font-family: var(--font-display); font-style: italic; font-weight: 400; font-size: 1.4rem; color: var(--bone); padding-bottom: 0.3rem; border-bottom: 1px solid var(--line-strong); }
+.bed-pop span span { font-size: 0.92rem; color: var(--ink); }
+.bed-pop .pop-support { color: var(--amber); }
 
 /* ---------- Crew garden ---------- */
 .garden-plot { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); }
@@ -780,6 +824,11 @@ td.num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
   .metric-list li > .num { grid-column: 1; grid-row: 2; }
   .metric-list li > .pill { grid-column: 2; grid-row: 1 / span 2; }
 
+  .garden-frame { margin: 0 0.5rem; }
+  .garden-scene { height: 920px; border-radius: 20px; }
+  .bed-sign strong { font-size: 1.15rem; }
+  .bed-sign em { font-size: 0.85rem; }
+  .bed-sign .posts { gap: 2.4rem; }
   .signin { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
   .signin-art { height: 42vh; min-height: 260px; }
   .signin-art::after { background: linear-gradient(180deg, transparent 55%, rgba(5, 11, 20, 0.95)); }

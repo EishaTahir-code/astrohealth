@@ -16,12 +16,16 @@ Work branch: `claude/great-davinci-gccflf`, merged into `main`.
 - Fonts stored in the app so they work offline: Instrument Serif (headings), Atkinson Hyperlegible Next (text,
   made to be easy to read), DM Mono (small labels like `[ HEALTH / AI 1 ]`).
 - Dark by design. Every text colour was checked for contrast (WCAG AA).
-- **Interactive crew garden** (based on your Voyager screenshots): the shared garden page opens with a
-  full-width night meadow. One patch of glowing flowers per crew member; how full and bright it is follows
-  their garden stage. Move the mouse (or drag a finger) and the flowers sway and bend with the movement,
-  then spring back. Stars, the planet, the moon, a drifting space station, grass and fireflies move at
-  different depths as you move and scroll. Click a patch to jump to that person's bed. With "reduce motion"
-  switched on in the computer's settings, it shows one still picture instead.
+- **Crew garden: a forest garden at night** (based on your reference picture with the three stone-ringed beds).
+  Each crew member has a round bed edged with stones, a **wooden sign that always shows their name and role**,
+  lanterns, moonlight and fireflies. What grows follows their garden stage: seedlings (just planted), drooping dry
+  plants (wilting), then more and more flowers (Leo's blue flowers, Sara's white lilies, Maya's violets).
+  **Details show only on hover**: hover a bed or its sign (or Tab to the sign, or tap on a phone) and a card says
+  how it is doing, for example "In full bloom: a vibrant display of fresh flowers!", plus the gentle support note
+  when a bed is wilting. Esc or tapping elsewhere closes it. The plants sway in a light breeze and bend when the
+  mouse or a finger moves through them, and the scene shifts slightly with the mouse for depth. With "reduce
+  motion" switched on, it stays still. On phones the beds stack in a zig-zag.
+  (Code: `client/src/components/GardenScene.jsx`. The earlier meadow version was replaced.)
 
 ### Missing features, now built
 | Area | What works now |
@@ -60,10 +64,10 @@ Work branch: `claude/great-davinci-gccflf`, merged into `main`.
 - Doctors could not mark an alert as reviewed (the server wanted the astronaut id again).
 
 ## How it was tested (14 Nov 2026)
-- Full walkthrough in a real browser (Playwright), on a clean server, with **no browser errors**: sign in (wrong password, wrong role, right one) → check-in with an encrypted note shared with the doctor → a red blood pressure reading creates a doctor alert → Health AI and Medication AI answer **live from Groq** → kit list search → family message sent, Ava's drawing shown, message queued in "link down" mode and sent when it reopens, demo reply arrives → greenhouse checklist → help signal received by the doctor → message to the doctor delivered → alertness game → interactive garden → pause support alerts → doctor: alerts banner, AI summary (live), mark reviewed, sees only the shared note (never the private one), sends a message and a note, access log → Maya sees the reply and "Reviewed by Dr. Ana Rivera" → Leo sees the support alert for Sara.
+- Full walkthrough in a real browser (Playwright), on a clean server, with **no browser errors**: sign in (wrong password, wrong role, right one) → check-in with an encrypted note shared with the doctor → a red blood pressure reading creates a doctor alert → Health AI and Medication AI answer **live from Groq** → kit list search → family message sent, Ava's drawing shown, message queued in "link down" mode and sent when it reopens, demo reply arrives → greenhouse checklist → help signal received by the doctor → message to the doctor delivered → alertness game → crew garden (names on signs, no details until hover, Sara's card on hover) → pause support alerts → doctor: alerts banner, AI summary (live), mark reviewed, sees only the shared note (never the private one), sends a message and a note, access log → Maya sees the reply and "Reviewed by Dr. Ana Rivera" → Leo sees the support alert for Sara.
 - With the server stopped: sign-in works on the device, the Medication tab answers from the local kit list, a help signal is queued.
 - Built app: after one visit it opens with **no internet at all**.
-- Phone size (iPhone 13): no sideways scrolling; the garden scene fits.
+- Crew garden: names always visible, no card at rest, cards on bed hover, sign hover, keyboard focus and tap; Esc closes; flowers bend when the mouse sweeps through. Phone size (iPhone 13): no sideways scrolling, beds stacked.
 - "Reduce motion": the garden shows one still picture.
 - Server checks: wrong password, missing or forged token (401), doctor using an astronaut route (403), an astronaut sending someone else's record (refused), unknown fields dropped.
 - Safety filter tests: real diagnoses and invented doses blocked; normal sentences and doses copied from the list allowed.
@@ -133,7 +137,7 @@ Rules:
 client/                    React app (Vite)
   src/pages/               one file per screen (SignIn, Today, CheckIn, Health, HealthAssistant, Medication,
                            CareTeam, Family, Greenhouse, Reaction, Emergency, Settings, Garden, Doctor)
-  src/components/          Shell (sidebar), InteractiveGarden (the meadow), FlowerBed, Icons, charts, Chat
+  src/components/          Shell (sidebar), GardenScene (the crew garden), FlowerBed, Icons, charts, Chat
   src/lib/                 auth, api, sync, connection, secure (encryption), alerts, support (crew garden),
                            family, greenhouse, garden, health, alertness, safety, offline answers, database, seed
   src/data/                crew, check-in questions, plants, medicines.json (ISS medical kit list)
