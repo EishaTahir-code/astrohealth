@@ -105,14 +105,14 @@
 
 ## Phase 9: The two AIs
 - [x] Set up `.env` with `GROQ_API_KEY` (and second key if using another provider)
-- [ ] Build AI 1 (Health Trends Assistant): graph explanations
-- [ ] Add AI 1 question-and-answer chat
+- [x] Build AI 1 (Health Trends Assistant): graph explanations
+- [x] Add AI 1 question-and-answer chat
 - [ ] Create `medicines.json` from the approved spacecraft medicine list
 - [ ] Build AI 2 (Medication Assistant) that answers only from `medicines.json`
 - [ ] Add offline fallback responses for both AIs
 - [ ] Add safety filters and medical disclaimers
-- [ ] Add uncertainty indicators
-- [ ] Add escalation rules
+- [x] Add uncertainty indicators
+- [x] Add escalation rules
 - [ ] Prevent diagnosis claims and unsafe medication advice
 - [ ] Add doctor-review workflow for serious concerns
 
