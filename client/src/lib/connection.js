@@ -1,38 +1,51 @@
-// Online/offline and AI status, shown on every screen
-// (the PRD says connection status must always be visible).
-import { useEffect, useState } from 'react'
+// Connection status, shown on every screen (the PRD says sync status must always be visible).
+//
+// "Ground link open" = the device is online AND the app server answers AND the astronaut has not
+// switched on practice mode ("Pretend the ground link is down" in Settings).
+import { useEffect, useSyncExternalStore } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { getStatus } from './api'
+import { db } from './db'
 
-export function useOnline() {
-  const [online, setOnline] = useState(navigator.onLine)
-  useEffect(() => {
-    const on = () => setOnline(true)
-    const off = () => setOnline(false)
-    window.addEventListener('online', on)
-    window.addEventListener('offline', off)
-    return () => {
-      window.removeEventListener('online', on)
-      window.removeEventListener('offline', off)
-    }
-  }, [])
-  return online
+const state = { online: navigator.onLine, server: null, ai: null }
+let snapshot = { ...state }
+const listeners = new Set()
+
+function emit() {
+  snapshot = { ...state }
+  listeners.forEach((l) => l())
 }
 
-// true = at least one AI has a key, false = offline answers only, null = still checking.
-export function useAiReady(online) {
-  const [aiReady, setAiReady] = useState(null)
+export async function checkServer() {
+  const s = navigator.onLine ? await getStatus() : null
+  state.online = navigator.onLine
+  state.server = Boolean(s)
+  state.ai = s ? Boolean(s.ai.health || s.ai.medication) : false
+  emit()
+  return state.server
+}
+
+let started = false
+function start() {
+  if (started) return
+  started = true
+  checkServer()
+  setInterval(checkServer, 20000)
+  window.addEventListener('online', checkServer)
+  window.addEventListener('offline', checkServer)
+}
+
+function subscribe(listener) {
+  start()
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+
+export function useLink() {
+  const s = useSyncExternalStore(subscribe, () => snapshot)
+  const blackout = useLiveQuery(() => db.settings.get('blackout').then((r) => Boolean(r?.value)), [], false)
   useEffect(() => {
-    let alive = true
-    const check = () =>
-      getStatus().then((s) => {
-        if (alive) setAiReady(s ? s.ai.health || s.ai.medication : false)
-      })
-    check()
-    const timer = setInterval(check, 30000)
-    return () => {
-      alive = false
-      clearInterval(timer)
-    }
-  }, [online])
-  return aiReady
+    start()
+  }, [])
+  return { ...s, blackout, open: s.online && s.server === true && !blackout }
 }

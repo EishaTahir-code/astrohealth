@@ -33,10 +33,10 @@ export default function TrendChart({ type, readings }) {
           <ResponsiveContainer>
             <LineChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>
               <CartesianGrid stroke="var(--line)" strokeDasharray="3 3" vertical={false} />
-              <ReferenceArea y1={m.band[0]} y2={m.band[1]} fill="var(--ok-soft)" fillOpacity={0.8} ifOverflow="extendDomain" />
+              <ReferenceArea y1={m.band[0]} y2={m.band[1]} fill="var(--leaf)" fillOpacity={0.1} ifOverflow="extendDomain" />
               <XAxis dataKey="day" tick={{ fontSize: 12, fill: 'var(--muted)' }} interval="preserveStartEnd" minTickGap={24} />
               <YAxis tick={{ fontSize: 12, fill: 'var(--muted)' }} domain={['auto', 'auto']} />
-              <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8 }} />
+              <Tooltip contentStyle={{ background: 'var(--panel-solid)', border: '1px solid var(--line-strong)', borderRadius: 10, color: 'var(--ink)' }} />
               {type === 'bp' && <Legend wrapperStyle={{ fontSize: 12 }} />}
               <Line
                 type="monotone"
@@ -44,11 +44,11 @@ export default function TrendChart({ type, readings }) {
                 name={type === 'bp' ? 'Systolic (top)' : `${m.label} (${m.unit})`}
                 stroke="var(--accent)"
                 strokeWidth={2}
-                dot={{ r: 2.5 }}
+                dot={{ r: 2.5, fill: 'var(--lime)', strokeWidth: 0 }}
                 isAnimationActive={false}
               />
               {type === 'bp' && (
-                <Line type="monotone" dataKey="value2" name="Diastolic (bottom)" stroke="var(--muted)" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 2.5 }} isAnimationActive={false} />
+                <Line type="monotone" dataKey="value2" name="Diastolic (bottom)" stroke="var(--teal-2)" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 2.5, fill: 'var(--teal-2)', strokeWidth: 0 }} isAnimationActive={false} />
               )}
             </LineChart>
           </ResponsiveContainer>

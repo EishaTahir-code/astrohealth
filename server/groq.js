@@ -19,7 +19,13 @@ export async function askGroq({ apiKey, model, system, user }) {
 
   for (const candidate of candidates) {
     tried.push(candidate);
-    const result = await callModel({ apiKey, model: candidate, system, user });
+    let result = await callModel({ apiKey, model: candidate, system, user });
+    // Free Groq accounts have a per-minute limit. If Groq asks us to wait a few seconds, wait once and retry.
+    if (result.retryAfter != null && result.retryAfter <= 10) {
+      await new Promise((r) => setTimeout(r, (result.retryAfter + 0.5) * 1000));
+      result = await callModel({ apiKey, model: candidate, system, user });
+    }
+    if (result.retryAfter != null) throw new Error('Groq is busy (rate limit). Try again in a minute.');
     if (result.modelMissing) continue;
     if (candidate !== model) {
       if (!working.has(model)) console.warn(`Groq model "${model}" is not available. Using "${candidate}" instead.`);
@@ -44,7 +50,7 @@ async function callModel({ apiKey, model, system, user }) {
     body: JSON.stringify({
       model,
       temperature: 0.3,
-      max_tokens: 900,
+      max_tokens: 700,
       ...reasoning,
       messages: [
         { role: 'system', content: system },
@@ -59,6 +65,10 @@ async function callModel({ apiKey, model, system, user }) {
     const code = body?.error?.code;
     if (res.status === 404 || code === 'model_not_found' || code === 'model_decommissioned') {
       return { modelMissing: true };
+    }
+    if (res.status === 429) {
+      const wait = Number(res.headers.get('retry-after')) || Number(/try again in ([\d.]+)s/.exec(body?.error?.message ?? '')?.[1]) || 5;
+      return { retryAfter: wait };
     }
     throw new Error(`Groq returned status ${res.status}${body?.error?.message ? `: ${body.error.message}` : ''}`);
   }

@@ -7,6 +7,7 @@
 //   - high stress (4-5)            -6
 //   - missed a check-in            -6  (only counted after your first check-in,
 //                                       and today does not count until it is over)
+//   + greenhouse checklist done    +3  (Greenhouse Reset: caring for a real plant)
 // Start at 50, keep between 0 and 100.
 import { dayKey } from './db'
 
@@ -18,7 +19,8 @@ export const STAGES = {
   blooming: { label: 'Blooming', status: 'green', note: 'In full bloom' },
 }
 
-export function scoreGarden(checkIns, today = new Date()) {
+// careDays: optional set of YYYY-MM-DD dates when the greenhouse checklist was finished.
+export function scoreGarden(checkIns, today = new Date(), careDays = new Set()) {
   if (!checkIns?.length) return { score: null, stage: 'empty', ...STAGES.empty }
 
   const byDate = new Map(checkIns.map((c) => [c.date, c]))
@@ -30,6 +32,7 @@ export function scoreGarden(checkIns, today = new Date()) {
     d.setDate(d.getDate() - i)
     const key = dayKey(d)
     if (key < firstDate) break
+    if (careDays.has(key)) score += 3
     const c = byDate.get(key)
     if (!c) {
       if (i > 0) score -= 6

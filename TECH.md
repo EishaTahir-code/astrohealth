@@ -1,20 +1,20 @@
-# OrbitGarden: Technical Architecture
+# Orbloom: Technical Architecture
 
-## 1. Tech stack
+## 1. Tech stack (what is built)
 | Layer | Technology |
 |---|---|
-| Mobile app | React Native or Flutter |
-| Web dashboard | React or Next.js |
-| Local database | SQLite, Realm, or IndexedDB |
-| Backend | Node.js + Express or FastAPI |
-| Main database | PostgreSQL |
-| Authentication | JWT + OAuth2 |
-| Real-time sync | WebSocket or Firebase-style sync |
-| Offline storage | Local encrypted database |
-| AI | On-device lightweight model + cloud model fallback (see section 5) |
-| Graphs | Recharts, Chart.js, or D3.js |
-| Notifications | Local notifications + push when online |
-| Security | AES encryption, HTTPS, role-based access control |
+| App (astronaut, doctor, crew garden) | React 19 + Vite web app, installable as a PWA (works offline after the first visit) |
+| Local database | IndexedDB through Dexie (`client/src/lib/db.js`) |
+| Local encryption | AES-256-GCM (browser WebCrypto), non-extractable device key (`client/src/lib/secure.js`) |
+| Backend | Node.js + Express (`server/`) |
+| Server database | One JSON file in `server/data/` (demo). PostgreSQL is the next step for a real mission |
+| Authentication | scrypt password hashes + signed JWT (HS256), role checks on every route; offline sign-in with PBKDF2 verifiers (`server/auth.js`, `client/src/lib/auth.js`) |
+| Sync | HTTP sync every 30 s and after changes, only shareable tables, field allowlists and per-role rules (`server/sync.js`, `client/src/lib/sync.js`) |
+| Family messages | Queued on the device, relayed by the server when the ground link is open (`server/family.js`) |
+| AI | Groq, model `openai/gpt-oss-120b` with automatic backups (see section 5) |
+| Graphs | Recharts; interactive crew garden drawn on an HTML canvas |
+| Notifications | Browser notifications for new messages (opt-in in Settings) |
+| Security | Hashed passwords, signed tokens, role-based access, encrypted private data, doctor access log, keys only in `.env` files |
 
 ## 2. System structure
 Astronaut Personal App → Local Encrypted Database → Backend API → Doctor Dashboard / Shared Crew Garden.
@@ -47,8 +47,8 @@ Two separate AIs, each in its own tab. Each is one small function. API keys are 
 |---|---|---|
 | Tab | AI Assistant (health graphs) | Medication tab |
 | Job | Explain graphs, answer health questions, write doctor-ready summaries | Answer questions about medicines available in the spacecraft |
-| Knowledge | The astronaut's own readings and baselines | `medicines.json`, the approved spacecraft medicine list |
-| API | Groq (`GROQ_API_KEY`) | [choose: Groq with a different system prompt, or another provider, e.g. `GEMINI_API_KEY`] |
+| Knowledge | The astronaut's own readings and baselines | `medicines.json`, built from the ISS medical kit list (NASA 3.001) in this project |
+| API | Groq (`GROQ_API_KEY` in `.env.health`) | Groq with its own instructions (`GROQ_API_KEY` in `.env.medication`) |
 | Offline fallback | Pre-written plain-language explanations per status (green/yellow/red) | Local search of `medicines.json`, no AI needed |
 
 ### AI 2 rules (medicine list)

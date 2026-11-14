@@ -1,0 +1,202 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#040a14}canvas{display:block}</style></head>
+<body><canvas id="c"></canvas>
+<script>
+// Nocturne Herbarium, Plate I. Drawn with the canvas-design skill for Orbloom's sign-in page.
+// Run: open in a browser (or Playwright) and wait for window.done === true.
+const FONTS = '../../.claude/skills/canvas-design/canvas-fonts/'
+const W = 1600, H = 1400
+const DPR = Number(new URLSearchParams(location.search).get('dpr') || 1)
+const cv = document.getElementById('c')
+cv.width = W * DPR; cv.height = H * DPR; cv.style.width = W + 'px'; cv.style.height = H + 'px'
+const ctx = cv.getContext('2d'); ctx.scale(DPR, DPR)
+
+// Deterministic randomness: the same plate every time.
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296 } }
+const R = mulberry32(214)
+const rnd = (a, b) => a + R() * (b - a)
+
+const NAVY = '#0b1d33', TEAL = '#2a6a80', LEAF = '#9ccb6e', LIME = '#dfe99a', BONE = '#f3f6ea'
+
+async function main() {
+  const mono = new FontFace('DM Mono', `url(${FONTS}DMMono-Regular.ttf)`)
+  const serif = new FontFace('Instrument Serif', `url(${FONTS}InstrumentSerif-Italic.ttf)`, { style: 'italic' })
+  await Promise.all([mono.load(), serif.load()]); document.fonts.add(mono); document.fonts.add(serif)
+
+  // Sky: orbital navy thinning into teal haze at the horizon.
+  const sky = ctx.createLinearGradient(0, 0, 0, H)
+  sky.addColorStop(0, '#03070f'); sky.addColorStop(0.42, '#081628'); sky.addColorStop(0.64, '#0c2638')
+  sky.addColorStop(0.76, '#123a47'); sky.addColorStop(0.86, '#0a1f27'); sky.addColorStop(1, '#03080b')
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H)
+
+  // Planet limb: one fine arc of rim light across the upper sky.
+  const PC = { x: 1180, y: -1900 }, PR = 2240
+  ctx.save(); ctx.beginPath(); ctx.arc(PC.x, PC.y, PR, 0, Math.PI * 2)
+  const pg = ctx.createRadialGradient(PC.x - 300, PC.y + 600, 200, PC.x, PC.y, PR)
+  pg.addColorStop(0, '#02050a'); pg.addColorStop(0.9, '#06101c'); pg.addColorStop(1, '#0d2a3a')
+  ctx.fillStyle = pg; ctx.fill(); ctx.restore()
+  for (const [w, a] of [[46, 0.035], [22, 0.06], [8, 0.12]]) {
+    ctx.beginPath(); ctx.arc(PC.x, PC.y, PR + w / 3, 0, Math.PI * 2); ctx.strokeStyle = `rgba(127,214,208,${a})`; ctx.lineWidth = w; ctx.stroke()
+  }
+  ctx.save(); ctx.shadowColor = 'rgba(159,227,220,0.9)'; ctx.shadowBlur = 18
+  ctx.beginPath(); ctx.arc(PC.x, PC.y, PR, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(190,240,232,0.85)'; ctx.lineWidth = 1.6; ctx.stroke(); ctx.restore()
+
+  // Stars: patient accumulation of points, none inside the planet.
+  const inPlanet = (x, y) => Math.hypot(x - PC.x, y - PC.y) < PR + 6
+  for (let i = 0; i < 1400; i++) {
+    const x = R() * W, y = Math.pow(R(), 1.35) * H * 0.72
+    if (inPlanet(x, y)) continue
+    const r = Math.pow(R(), 3) * 1.5 + 0.25
+    ctx.fillStyle = `rgba(232,240,236,${rnd(0.15, 0.85) * (1 - y / (H * 0.8))})`
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill()
+  }
+  for (let i = 0; i < 14; i++) {
+    const x = rnd(40, W - 40), y = rnd(30, H * 0.5)
+    if (inPlanet(x, y)) continue
+    const L = rnd(6, 14)
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = 'rgba(223,233,210,0.55)'; ctx.lineWidth = 0.7
+    ctx.beginPath(); ctx.moveTo(x - L, y); ctx.lineTo(x + L, y); ctx.moveTo(x, y - L); ctx.lineTo(x, y + L); ctx.stroke()
+    ctx.fillStyle = '#fff'; ctx.shadowColor = '#cfeff0'; ctx.shadowBlur = 8; ctx.beginPath(); ctx.arc(x, y, 1.3, 0, Math.PI * 2); ctx.fill(); ctx.restore()
+  }
+
+  // Horizon haze.
+  const haze = ctx.createRadialGradient(W * 0.48, H * 0.8, 20, W * 0.48, H * 0.8, W * 0.62)
+  haze.addColorStop(0, 'rgba(42,106,128,0.42)'); haze.addColorStop(0.5, 'rgba(42,106,128,0.14)'); haze.addColorStop(1, 'rgba(42,106,128,0)')
+  ctx.fillStyle = haze; ctx.fillRect(0, 0, W, H)
+
+  // Orbital reference line with ticks: the systematic notation of the plate.
+  ctx.save(); ctx.strokeStyle = 'rgba(223,233,154,0.16)'; ctx.lineWidth = 1; ctx.setLineDash([2, 7])
+  ctx.beginPath(); ctx.moveTo(70, H * 0.585); ctx.lineTo(W - 70, H * 0.585); ctx.stroke(); ctx.setLineDash([])
+  for (let x = 70; x <= W - 70; x += 96) { ctx.beginPath(); ctx.moveTo(x, H * 0.585 - 4); ctx.lineTo(x, H * 0.585 + 4); ctx.stroke() }
+  ctx.restore()
+
+  // Distant meadow: dense dark grass.
+  for (let i = 0; i < 1500; i++) {
+    const x = rnd(-20, W + 20), base = H + 5, h = rnd(40, 230) * (0.6 + 0.4 * Math.sin(x / 210) ** 2)
+    ctx.strokeStyle = `rgba(${rnd(8, 20) | 0},${rnd(28, 50) | 0},${rnd(34, 52) | 0},${rnd(0.5, 0.95)})`; ctx.lineWidth = rnd(0.6, 1.6)
+    ctx.beginPath(); ctx.moveTo(x, base); ctx.quadraticCurveTo(x + rnd(-12, 12), base - h * 0.6, x + rnd(-26, 26), base - h); ctx.stroke()
+  }
+
+  const blooms = []
+  // Stems with flowers. Each plant is a curve; its head is one of four specimen types.
+  const plants = []
+  const types = ['daisy', 'daisy', 'umbel', 'umbel', 'seed', 'bud', 'daisy', 'umbel']
+  for (let i = 0; i < 64; i++) {
+    const x = (i / 64) * (W + 80) - 40 + rnd(-22, 22)
+    const tall = 0.5 + 0.5 * Math.sin(x / 260 + 1.2) ** 2
+    const h = rnd(260, 610) * tall + rnd(0, 120)
+    plants.push({ x, h, type: types[(R() * types.length) | 0], lean: rnd(-60, 60), size: rnd(0.75, 1.25) })
+  }
+  // Focal specimens.
+  plants.push({ x: 520, h: 760, type: 'ghost', lean: -40, size: 1.25 })
+  plants.push({ x: 1210, h: 650, type: 'ghost', lean: 50, size: 1 })
+  plants.push({ x: 860, h: 700, type: 'umbel', lean: 20, size: 1.35 })
+  plants.push({ x: 300, h: 560, type: 'seed', lean: 30, size: 1.35 })
+  plants.sort((a, b) => a.h - b.h)
+
+  for (const p of plants) {
+    const base = { x: p.x, y: H + 10 }
+    const tip = { x: p.x + p.lean, y: H - p.h }
+    const c1 = { x: p.x + p.lean * 0.1 + rnd(-20, 20), y: H - p.h * 0.45 }
+    ctx.save(); ctx.strokeStyle = 'rgba(96,150,104,0.75)'; ctx.lineWidth = 1.5 * p.size
+    ctx.shadowColor = 'rgba(156,203,110,0.35)'; ctx.shadowBlur = 6
+    ctx.beginPath(); ctx.moveTo(base.x, base.y); ctx.quadraticCurveTo(c1.x, c1.y, tip.x, tip.y); ctx.stroke(); ctx.restore()
+    // leaves
+    for (let k = 0; k < 3; k++) {
+      const t = rnd(0.15, 0.6), lx = (1 - t) ** 2 * base.x + 2 * (1 - t) * t * c1.x + t * t * tip.x, ly = (1 - t) ** 2 * base.y + 2 * (1 - t) * t * c1.y + t * t * tip.y
+      const side = k % 2 ? 1 : -1, len = rnd(26, 60) * p.size
+      ctx.save(); ctx.fillStyle = 'rgba(70,122,84,0.7)'; ctx.translate(lx, ly); ctx.rotate(side * rnd(0.5, 1.1) - Math.PI / 2 * 0)
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(side * len * 0.5, -len * 0.35, side * len, -len * 0.9); ctx.quadraticCurveTo(side * len * 0.35, -len * 0.25, 0, 0); ctx.fill(); ctx.restore()
+    }
+    drawHead(p.type, tip.x, tip.y, p.size)
+    blooms.push({ ...tip, type: p.type, size: p.size })
+  }
+
+  function glow(color, blur) { ctx.shadowColor = color; ctx.shadowBlur = blur }
+
+  function drawHead(type, x, y, s) {
+    ctx.save(); ctx.translate(x, y); ctx.globalCompositeOperation = 'lighter'
+    if (type === 'daisy') {
+      const n = 12 + (R() * 5 | 0), len = 16 * s
+      glow('rgba(223,233,154,0.35)', 8)
+      for (let i = 0; i < n; i++) {
+        ctx.save(); ctx.rotate((i / n) * Math.PI * 2 + rnd(-0.05, 0.05))
+        ctx.fillStyle = `rgba(243,246,234,${rnd(0.28, 0.5)})`; ctx.beginPath(); ctx.ellipse(0, -len * 0.64, 1.6 * s, len * 0.5, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore()
+      }
+      ctx.fillStyle = LIME; glow(LIME, 12); ctx.beginPath(); ctx.arc(0, 0, 4.2 * s, 0, Math.PI * 2); ctx.fill()
+    } else if (type === 'umbel') {
+      const rays = 13 + (R() * 6 | 0), L = 30 * s
+      ctx.strokeStyle = 'rgba(200,226,190,0.28)'; ctx.lineWidth = 0.7
+      for (let i = 0; i < rays; i++) {
+        const a = -Math.PI / 2 + (i / (rays - 1) - 0.5) * 2.5, ex = Math.cos(a) * L, ey = Math.sin(a) * L * 0.55 - L * 0.25
+        ctx.beginPath(); ctx.moveTo(0, 6); ctx.lineTo(ex, ey); ctx.stroke()
+        glow('rgba(243,246,234,0.8)', 7)
+        for (let k = 0; k < 9; k++) { ctx.fillStyle = `rgba(243,246,234,${rnd(0.5, 0.95)})`; ctx.beginPath(); ctx.arc(ex + rnd(-5, 5) * s, ey + rnd(-3, 3) * s, rnd(0.8, 1.7) * s, 0, Math.PI * 2); ctx.fill() }
+        ctx.shadowBlur = 0
+      }
+    } else if (type === 'seed') {
+      const n = 90, L = 26 * s
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2, l = L * rnd(0.8, 1.05)
+        ctx.strokeStyle = 'rgba(232,240,236,0.32)'; ctx.lineWidth = 0.5
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * l, Math.sin(a) * l); ctx.stroke()
+        ctx.fillStyle = 'rgba(243,246,234,0.75)'; ctx.beginPath(); ctx.arc(Math.cos(a) * l, Math.sin(a) * l, 0.9, 0, Math.PI * 2); ctx.fill()
+      }
+      ctx.fillStyle = 'rgba(223,233,154,0.9)'; glow(LIME, 10); ctx.beginPath(); ctx.arc(0, 0, 2.5, 0, Math.PI * 2); ctx.fill()
+    } else if (type === 'bud') {
+      ctx.fillStyle = 'rgba(223,233,154,0.85)'; glow(LIME, 14); ctx.beginPath(); ctx.ellipse(0, 0, 3.2 * s, 5.2 * s, 0, 0, Math.PI * 2); ctx.fill()
+    } else if (type === 'ghost') {
+      // Translucent orchid: petals lit at their edges, like a radiograph of a flower.
+      for (let i = 0; i < 5; i++) {
+        ctx.save(); ctx.rotate((i / 5) * Math.PI * 2 - Math.PI / 2 + 0.2)
+        const L = (i === 0 ? 58 : 46) * s, Wd = 24 * s
+        const g = ctx.createRadialGradient(0, -L * 0.5, 2, 0, -L * 0.5, L * 0.75)
+        g.addColorStop(0, 'rgba(243,246,234,0.10)'); g.addColorStop(0.7, 'rgba(190,232,240,0.16)'); g.addColorStop(1, 'rgba(190,232,240,0.02)')
+        ctx.fillStyle = g; ctx.strokeStyle = 'rgba(232,244,246,0.55)'; ctx.lineWidth = 1
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.bezierCurveTo(-Wd, -L * 0.3, -Wd * 0.7, -L, 0, -L); ctx.bezierCurveTo(Wd * 0.7, -L, Wd, -L * 0.3, 0, 0)
+        glow('rgba(190,232,240,0.6)', 14); ctx.fill(); ctx.stroke()
+        // veins
+        ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(232,244,246,0.18)'; ctx.lineWidth = 0.6
+        for (let v = -2; v <= 2; v++) { ctx.beginPath(); ctx.moveTo(0, -4); ctx.quadraticCurveTo(v * Wd * 0.18, -L * 0.5, v * Wd * 0.1, -L * 0.92); ctx.stroke() }
+        ctx.restore()
+      }
+      ctx.fillStyle = BONE; glow('rgba(243,246,234,1)', 22); ctx.beginPath(); ctx.arc(0, 0, 5 * s, 0, Math.PI * 2); ctx.fill()
+      ctx.fillStyle = LIME; glow(LIME, 10); ctx.beginPath(); ctx.arc(0, 0, 2.2 * s, 0, Math.PI * 2); ctx.fill()
+    }
+    ctx.restore()
+  }
+
+  // Fireflies and drifting pollen: the only lime in the air.
+  for (let i = 0; i < 46; i++) {
+    const x = rnd(40, W - 40), y = rnd(H * 0.5, H * 0.95), r = rnd(1, 2.6)
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; glow('rgba(223,233,154,0.9)', 18)
+    ctx.fillStyle = `rgba(223,233,154,${rnd(0.45, 0.95)})`; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.restore()
+  }
+
+  // Specimen annotations: tiny, bracketed, joined by hairline leaders.
+  const ghost = blooms.find((b) => b.type === 'ghost' && b.x < 800)
+  const umb = blooms.filter((b) => b.type === 'umbel').sort((a, b) => a.y - b.y)[0]
+  const seed = blooms.filter((b) => b.type === 'seed').sort((a, b) => a.y - b.y)[0]
+  ctx.font = '13px "DM Mono"'; ctx.textBaseline = 'middle'
+  function note(b, dx, dy, label) {
+    const ax = b.x + dx, ay = b.y + dy
+    ctx.save(); ctx.strokeStyle = 'rgba(223,233,154,0.5)'; ctx.lineWidth = 1
+    ctx.beginPath(); ctx.arc(b.x, b.y, 15 * b.size + 10, 0, Math.PI * 2); ctx.setLineDash([2, 4]); ctx.stroke(); ctx.setLineDash([])
+    const ex = b.x + Math.sign(dx) * (15 * b.size + 10) * 0.7, ey = b.y + Math.sign(dy) * (15 * b.size + 10) * 0.7
+    ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(ax, ay); ctx.lineTo(ax + Math.sign(dx) * 34, ay); ctx.stroke()
+    ctx.fillStyle = 'rgba(223,233,154,0.82)'; ctx.textAlign = dx > 0 ? 'left' : 'right'
+    ctx.fillText(label, ax + Math.sign(dx) * 42, ay); ctx.restore()
+  }
+  if (ghost) note(ghost, 130, -90, '[ BLOOM / 01 ]')
+  if (umb) note(umb, 120, -70, '[ SIGNAL : CALM ]')
+  if (seed) note(seed, -120, 80, '[ SEED / REST ]')
+
+  // Plate title, whispered.
+  ctx.fillStyle = 'rgba(243,246,234,0.55)'; ctx.font = 'italic 22px "Instrument Serif"'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'
+  ctx.fillText('Nocturne Herbarium, plate I', 64, 196)
+  ctx.font = '11px "DM Mono"'; ctx.fillStyle = 'rgba(223,233,154,0.5)'; ctx.fillText('LUMINOUS FLORA OF LOW ORBIT  ·  ALT 408 KM', 64, 220)
+  window.done = true
+}
+main()
+</script></body></html>

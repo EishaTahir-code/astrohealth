@@ -48,6 +48,6 @@ export async function healthAssistant(req, res) {
     res.json({ answer: filterAnswer(text), source: 'ai' });
   } catch (err) {
     console.warn('AI 1 failed, using fallback:', err.message);
-    res.json({ fallback: true, reason: 'ai-error' });
+    res.json({ fallback: true, reason: /rate limit/i.test(err.message) ? 'ai-busy' : 'ai-error' });
   }
 }

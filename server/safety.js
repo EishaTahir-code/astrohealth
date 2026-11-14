@@ -30,16 +30,25 @@ const DIAGNOSIS = new RegExp(
   'i',
 )
 
-// Specific doses (e.g. "500 mg", "2 tablets"). The medicine list in this demo has no doses,
-// so any dose in an answer would be made up.
-const DOSE = /\b\d+(\.\d+)?\s?(mg|milligrams?|mcg|g|ml|millilit(er|re)s?|tablets?|pills?|capsules?|drops?)\b/i
+// Specific doses (e.g. "500 mg", "2 tablets").
+const DOSE = /\b\d+(\.\d+)?\s?(mg|milligrams?|mcg|micrograms?|g|gm|grams?|ml|mL|millilit(er|re)s?|units?|tablets?|pills?|capsules?|drops?|puffs?|sprays?)\b/gi
 
-export function filterAnswer(text, { medication = false } = {}) {
+const squash = (t) => String(t || '').toLowerCase().replace(/\s+/g, '')
+
+// A dose in an answer is allowed only if the same text is on the approved medicine list
+// for the medicines we gave the AI (allowedDoseText). Anything else would be made up.
+function hasInventedDose(text, allowedDoseText) {
+  const allowed = new Set((String(allowedDoseText).match(DOSE) ?? []).map(squash))
+  const doses = String(text).match(DOSE) ?? []
+  return doses.some((d) => !allowed.has(squash(d)))
+}
+
+export function filterAnswer(text, { medication = false, allowedDoseText = '' } = {}) {
   if (DIAGNOSIS.test(text)) {
     return 'I can’t give a diagnosis. Your readings may be worth discussing with the flight surgeon, who can look at the full picture.'
   }
-  if (medication && DOSE.test(text)) {
-    return 'I can’t give specific doses. Please follow the dose on the approved spacecraft list or ask the flight surgeon.'
+  if (medication && hasInventedDose(text, allowedDoseText)) {
+    return 'I can’t give doses that are not on the approved list. Please check the medical kit list or ask the flight surgeon.'
   }
   return text
 }

@@ -1,27 +1,28 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import AlertnessChart from '../components/AlertnessChart'
-import { db } from '../lib/db'
+import { db, newId } from '../lib/db'
 import { scoreTest } from '../lib/alertness'
-import { ME } from '../data/crew'
+import { alertOnAlertness } from '../lib/alerts'
+import { requestSync } from '../lib/sync'
 
 const TRIALS = 5
 const MISS_AFTER_MS = 2000
 const randomWait = () => 1500 + Math.random() * 2500 // 1.5 to 4 seconds
 
 // Reaction-time game: wait for the signal, then tap as fast as you can. 5 rounds.
-export default function Reaction() {
-  const tests = useLiveQuery(() => db.reactionTests.where('userId').equals(ME).toArray(), [])
+export default function Reaction({ me }) {
+  const tests = useLiveQuery(() => db.reactionTests.where('userId').equals(me).toArray(), [me])
 
   return (
     <div className="grid grid-2 top">
-      <Game />
+      <Game me={me} />
       {tests ? <AlertnessChart tests={tests} /> : <p>Loading…</p>}
     </div>
   )
 }
 
-function Game() {
+function Game({ me }) {
   // phase: idle | waiting | go | done
   const [phase, setPhase] = useState('idle')
   const [round, setRound] = useState(0)
@@ -74,7 +75,9 @@ function Game() {
     setPhase('done')
     const score = scoreTest(times.current, errors.current, TRIALS)
     setResult(score)
-    await db.reactionTests.add({ userId: ME, ...score, createdAt: Date.now(), synced: false })
+    await db.reactionTests.add({ uid: newId(), userId: me, ...score, createdAt: Date.now(), synced: false })
+    await alertOnAlertness(me)
+    requestSync()
   }
 
   function tap() {

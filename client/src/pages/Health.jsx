@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import HealthOverview from '../components/HealthOverview'
-import { db } from '../lib/db'
+import { db, newId } from '../lib/db'
 import { METRICS } from '../lib/health'
-import { ME } from '../data/crew'
+import { alertOnRedFlags } from '../lib/alerts'
+import { requestSync } from '../lib/sync'
 
 const EMPTY = { sys: '', dia: '', heartRate: '', temperature: '', sleep: '', bloodSugar: '' }
 
@@ -12,12 +13,12 @@ const LIMITS = {
   sys: [60, 250], dia: [30, 160], heartRate: [20, 250], temperature: [30, 45], sleep: [0, 24], bloodSugar: [20, 600],
 }
 
-export default function Health() {
-  const readings = useLiveQuery(() => db.readings.where('userId').equals(ME).toArray(), [])
+export default function Health({ me }) {
+  const readings = useLiveQuery(() => db.readings.where('userId').equals(me).toArray(), [me])
 
   return (
     <div className="stack">
-      <ReadingForm />
+      <ReadingForm me={me} />
       {!readings ? <p>Loading…</p> : <HealthOverview readings={readings} />}
       <p className="disclaimer">
         Green, yellow and red use simple demo ranges, not medical advice. The shaded band on each graph is the demo
@@ -27,7 +28,7 @@ export default function Health() {
   )
 }
 
-function ReadingForm() {
+function ReadingForm({ me }) {
   const [form, setForm] = useState(EMPTY)
   const [errors, setErrors] = useState({})
   const [saved, setSaved] = useState('')
@@ -48,19 +49,22 @@ function ReadingForm() {
     if (Object.keys(errs).length) return
 
     const now = Date.now()
-    const base = { userId: ME, recordedAt: now, synced: false }
+    const base = { userId: me, recordedAt: now, synced: false }
     const rows = []
-    if (form.sys !== '') rows.push({ ...base, type: 'bp', value: Number(form.sys), value2: Number(form.dia), unit: METRICS.bp.unit })
+    if (form.sys !== '') rows.push({ ...base, uid: newId(), type: 'bp', value: Number(form.sys), value2: Number(form.dia), unit: METRICS.bp.unit })
     for (const type of ['heartRate', 'temperature', 'sleep', 'bloodSugar']) {
-      if (form[type] !== '') rows.push({ ...base, type, value: Number(form[type]), unit: METRICS[type].unit })
+      if (form[type] !== '') rows.push({ ...base, uid: newId(), type, value: Number(form[type]), unit: METRICS[type].unit })
     }
     if (!rows.length) {
       setErrors({ form: 'Fill in at least one measurement.' })
       return
     }
     await db.readings.bulkAdd(rows)
+    // Red readings become alerts for the flight surgeon; readings sync when the link is open.
+    await alertOnRedFlags(me)
+    requestSync()
     setForm(EMPTY)
-    setSaved(`Saved ${rows.length} reading${rows.length > 1 ? 's' : ''} on this device.`)
+    setSaved(`Saved ${rows.length} reading${rows.length > 1 ? 's' : ''}. They sync to the flight surgeon when the link is open.`)
     setTimeout(() => setSaved(''), 4000)
   }
 

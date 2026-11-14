@@ -1,40 +1,42 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import ScaleInput from '../components/ScaleInput'
-import { db, dayKey } from '../lib/db'
-import { ME } from '../data/crew'
+import { db, dayKey, newId } from '../lib/db'
+import { seal, unseal } from '../lib/secure'
+import { publishCrewStatus } from '../lib/support'
+import { requestSync } from '../lib/sync'
 import { CHECKIN_FIELDS } from '../data/checkinFields'
 
-const EMPTY = { mood: null, stress: null, energy: null, sleepQuality: null, workload: null, notes: '' }
+const EMPTY = { mood: null, stress: null, energy: null, sleepQuality: null, workload: null }
 
-export default function CheckIn() {
+export default function CheckIn({ me }) {
   const today = dayKey()
   // undefined = still loading, null = no check-in yet today
-  const existing = useLiveQuery(
-    () => db.checkIns.where({ userId: ME, date: today }).first().then((r) => r ?? null),
-    [today],
-  )
+  const existing = useLiveQuery(() => db.checkIns.where({ userId: me, date: today }).first().then((r) => r ?? null), [me, today])
   const recent = useLiveQuery(
-    () => db.checkIns.where('userId').equals(ME).reverse().sortBy('date').then((r) => r.slice(0, 7)),
-    [],
+    () => db.checkIns.where('userId').equals(me).reverse().sortBy('date').then((r) => r.slice(0, 7)),
+    [me],
   )
 
   return (
     <div className="grid grid-2 top">
-      {existing === undefined ? (
-        <div className="card">Loading…</div>
-      ) : (
-        <CheckInForm key={today} existing={existing} today={today} />
-      )}
+      {existing === undefined ? <div className="card">Loading…</div> : <CheckInForm key={`${me}-${today}`} me={me} existing={existing} today={today} />}
       <RecentCheckIns recent={recent} />
     </div>
   )
 }
 
-function CheckInForm({ existing, today }) {
+function CheckInForm({ me, existing, today }) {
   const [form, setForm] = useState(existing ? { ...EMPTY, ...existing } : EMPTY)
-  const [saved, setSaved] = useState(false)
+  const [note, setNote] = useState('')
+  const [share, setShare] = useState(false)
+  const [saved, setSaved] = useState('')
   const [hasEntry, setHasEntry] = useState(Boolean(existing))
+
+  // The private note is stored encrypted: unscramble it to show it here.
+  useEffect(() => {
+    if (existing?.notes) unseal(existing.notes).then(setNote)
+  }, [existing])
 
   const missing = CHECKIN_FIELDS.filter((f) => form[f.key] == null)
 
@@ -42,32 +44,38 @@ function CheckInForm({ existing, today }) {
     e.preventDefault()
     if (missing.length) return
     const entry = {
-      userId: ME,
+      userId: me,
       date: today,
       mood: form.mood,
       stress: form.stress,
       energy: form.energy,
       sleepQuality: form.sleepQuality,
       workload: form.workload,
-      notes: form.notes.trim(),
+      notes: await seal(note.trim()),
       createdAt: Date.now(),
-      synced: false,
+      synced: false, // check-ins never leave this device
     }
     // One check-in per day: update today's if it exists, otherwise add a new one.
-    const current = await db.checkIns.where({ userId: ME, date: today }).first()
+    const current = await db.checkIns.where({ userId: me, date: today }).first()
     if (current) await db.checkIns.update(current.id, entry)
     else await db.checkIns.add(entry)
+
+    // Only if the astronaut ticks the box: a copy of the note goes to the flight surgeon.
+    if (share && note.trim()) {
+      await db.sharedNotes.add({ uid: newId(), userId: me, text: note.trim(), date: today, createdAt: Date.now(), synced: false })
+      requestSync()
+    }
+    await publishCrewStatus(me)
     setHasEntry(true)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 4000)
+    setSaved(share && note.trim() ? 'Check-in saved. Your note was shared with the flight surgeon.' : 'Check-in saved on this device.')
+    setShare(false)
+    setTimeout(() => setSaved(''), 5000)
   }
 
   return (
     <form className="card" onSubmit={save} noValidate>
       <h2>How are you today?</h2>
-      <p className="muted small">
-        {hasEntry ? 'You already checked in today. You can update it.' : 'Takes about one minute.'}
-      </p>
+      <p className="muted small">{hasEntry ? 'You already checked in today. You can update it.' : 'Takes about one minute.'}</p>
       {CHECKIN_FIELDS.map((f) => (
         <ScaleInput
           key={f.key}
@@ -81,20 +89,22 @@ function CheckInForm({ existing, today }) {
       ))}
       <div className="field">
         <label htmlFor="notes">
-          Private note <span className="hint">(optional, only you can see this)</span>
+          Private note <span className="hint">(optional, encrypted on this device, only you can see it)</span>
         </label>
-        <textarea id="notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+        <textarea id="notes" value={note} onChange={(e) => setNote(e.target.value)} />
+        <label className="check small">
+          <input type="checkbox" checked={share} onChange={(e) => setShare(e.target.checked)} disabled={!note.trim()} />
+          <span>Also share this note with the flight surgeon</span>
+        </label>
       </div>
       <div className="row form-actions">
         <button className="btn" type="submit" disabled={missing.length > 0}>
           {hasEntry ? 'Update check-in' : 'Save check-in'}
         </button>
-        {missing.length > 0 && (
-          <span className="muted small">Still to answer: {missing.map((f) => f.label.toLowerCase()).join(', ')}</span>
-        )}
+        {missing.length > 0 && <span className="muted small">Still to answer: {missing.map((f) => f.label.toLowerCase()).join(', ')}</span>}
       </div>
       <div aria-live="polite" className="spaced">
-        {saved && <div className="toast">Check-in saved on this device.</div>}
+        {saved && <div className="toast">{saved}</div>}
       </div>
     </form>
   )
@@ -123,7 +133,7 @@ function RecentCheckIns({ recent }) {
             <tbody>
               {recent.map((c) => (
                 <tr key={c.id}>
-                  <td>{c.date.slice(5)}</td>
+                  <td className="num">{c.date.slice(5)}</td>
                   <td className="num">{c.mood}</td>
                   <td className="num">{c.stress}</td>
                   <td className="num">{c.energy}</td>
@@ -135,9 +145,7 @@ function RecentCheckIns({ recent }) {
           </table>
         </div>
       )}
-      <p className="muted small spaced">
-        Saved only on this device for now. Not synced: syncing is not built in this demo.
-      </p>
+      <p className="muted small spaced">Check-ins never leave this device. Only your garden stage is shared with the crew.</p>
     </section>
   )
 }
