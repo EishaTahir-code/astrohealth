@@ -2,8 +2,9 @@ import { Suspense, lazy, useEffect } from 'react'
 import AppShell, { PublicShell } from './components/Shell'
 import SignIn from './pages/SignIn'
 import { useRoute } from './lib/router'
-import { useSession } from './lib/auth'
+import { useRecovery, useSession } from './lib/auth'
 import { ensureDemoData } from './lib/seed'
+import { loadCrew } from './data/crew'
 
 // Pages load when first opened, so the first screen appears quickly.
 const MySpace = lazy(() => import('./pages/MySpace'))
@@ -20,10 +21,13 @@ const ASTRONAUT_SECTIONS = ['checkin', 'health', 'meds', 'care', 'family', 'gree
 export default function App() {
   const [section, sub, extra] = useRoute()
   const user = useSession()
+  const recovering = useRecovery()
 
-  // Adds the fake crew data the first time the app opens on this device.
+  // Adds the fake crew data the first time the app opens on this device,
+  // and loads the crew list (people who signed up) saved on this device.
   useEffect(() => {
     ensureDemoData().catch((err) => console.error('Could not add demo data', err))
+    loadCrew()
   }, [])
 
   const isHome = section !== 'me' && section !== 'doctor' && section !== 'garden'
@@ -38,6 +42,9 @@ export default function App() {
       <p className="muted">Loading…</p>
     </div>
   )
+
+  // Opened a password-reset link from the email: choose a new password first.
+  if (recovering) return <SignIn key="recovery" recovery />
 
   if (section === 'garden') {
     const page = (

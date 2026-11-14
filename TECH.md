@@ -6,20 +6,32 @@
 | App (astronaut, doctor, crew garden) | React 19 + Vite web app, installable as a PWA (works offline after the first visit) |
 | Local database | IndexedDB through Dexie (`client/src/lib/db.js`) |
 | Local encryption | AES-256-GCM (browser WebCrypto), non-extractable device key (`client/src/lib/secure.js`) |
-| Backend | Node.js + Express (`server/`) |
-| Server database | One JSON file in `server/data/` (demo). PostgreSQL is the next step for a real mission |
-| Authentication | scrypt password hashes + signed JWT (HS256), role checks on every route; offline sign-in with PBKDF2 verifiers (`server/auth.js`, `client/src/lib/auth.js`) |
-| Sync | HTTP sync every 30 s and after changes, only shareable tables, field allowlists and per-role rules (`server/sync.js`, `client/src/lib/sync.js`) |
-| Family messages | Queued on the device, relayed by the server when the ground link is open (`server/family.js`) |
-| AI | Groq, model `openai/gpt-oss-120b` with automatic backups (see section 5) |
+| Backend | Supabase project "Orbloom" (no server of our own). Client library `@supabase/supabase-js` (`client/src/lib/supabase.js`) |
+| Online database | Supabase PostgreSQL: `profiles`, `records` (all shareable health records), `family_messages`; privacy rules with Row Level Security (`supabase/migrations/`) |
+| Authentication | Supabase Auth: email + password sign up, sign in, password reset (PKCE link). Role and crew id live in `profiles`, set by a database trigger; flight surgeons need an invite code (bcrypt hash in a private table). Offline sign-in with PBKDF2 verifiers saved on the device after an online sign-in (`client/src/lib/auth.js`) |
+| Sync | Every 30 s and right after changes: upsert of this device's unsent shareable records, then "what changed since seq N"; alert reviews through the `review_alert` database function (`client/src/lib/sync.js`) |
+| Family messages | Queued on the device, sent to `family_messages` when the ground link is open; a database trigger adds the demo reply, visible after 20 s |
+| AI | Supabase Edge Function `orbloom-ai` (Deno) calling Groq, model `openai/gpt-oss-120b` with automatic backups (see section 5) |
+| Hosting | GitHub Pages, built and published by `.github/workflows/deploy-pages.yml`; installable on phones (PWA) |
 | Graphs | Recharts; interactive crew garden drawn on an HTML canvas |
 | Notifications | Browser notifications for new messages (opt-in in Settings) |
-| Security | Hashed passwords, signed tokens, role-based access, encrypted private data, doctor access log, keys only in `.env` files |
+| Security | Supabase Auth (hashed passwords, signed tokens), Row Level Security, demo and real accounts kept apart, encrypted private data on the device, doctor access log, AI key only as a Supabase secret |
 
 ## 2. System structure
-Astronaut Personal App → Local Encrypted Database → Backend API → Doctor Dashboard / Shared Crew Garden.
+Astronaut Personal App → Local Encrypted Database → Supabase (Auth, PostgreSQL with Row Level Security, Edge Function for the AI) → Doctor Dashboard / Shared Crew Garden.
 
-The astronaut app works fully offline. Data syncs to the backend only during an available secure communication window.
+The astronaut app works fully offline. Data syncs to Supabase only during an available secure communication window (HTTPS).
+
+### Privacy rules in the database (Row Level Security)
+| Who | Can read | Can write |
+|---|---|---|
+| Astronaut | own readings, alertness tests, alerts, shared notes, messages; everyone's garden status (same world) | own readings, tests, alerts (never the review), shared notes, messages from themselves, own garden status |
+| Flight surgeon | all shareable records of astronauts in the same world | notes, messages from themselves, access-log entries; alert reviews only through `review_alert` |
+| Signed out | nothing | nothing |
+
+"World": demo accounts (public demo passwords) and real accounts never see each other's data.
+Names on doctor notes and messages, the doctor's email in the access log, and record owners are filled in by the
+database, not by the device. Unknown fields are dropped.
 
 ## 3. Application structure
 
@@ -43,7 +55,7 @@ The astronaut app works fully offline. Data syncs to the backend only during an 
 
 One AI, the **Health assistant**, on the Health page (decision of 14 Nov 2026: the Medication AI was removed;
 the Medication tab is now the searchable medical kit list, which needs no AI and works offline).
-API keys are read from `.env.health` only (older `.env.medication` / `.env` also work), never written in code.
+The Groq key is the Supabase Edge Function secret `GROQ_API_KEY`, never written in code or sent to the browser.
 
 | | Health assistant | Doctors' AI summary |
 |---|---|---|
@@ -62,11 +74,13 @@ API keys are read from `.env.health` only (older `.env.medication` / `.env` also
 - No diagnosis, show uncertainty, recommend escalation for red flags, respect privacy (only the astronaut's own shared data), safe offline fallback.
 - Red-flag symptoms skip the AI and go straight to "contact the flight surgeon".
 - Safety filter on every response before it is shown.
-- The app says why the AI is not live (no key, example text, key refused, offline sign-in, older server) instead of silently answering offline.
+- The app says why the AI is not live (no key, example text, key refused, offline sign-in, no ground link) instead of silently answering offline.
+- The Edge Function checks the Supabase sign-in and the role (astronauts: assistant; flight surgeons: summary).
 
 ## 6. Security
 - AES encryption for sensitive local data and messages.
 - HTTPS for all sync. Sync only on a secure connection.
-- Role-based access control (astronaut, doctor, crew).
+- Role-based access control (astronaut, doctor, crew), enforced by Row Level Security in Supabase.
+- Flight surgeon sign-up needs an invite code (checked in the database, stored as a bcrypt hash).
 - Audit log for every doctor access.
-- `.env` and keys in `.gitignore`.
+- `.env` and keys in `.gitignore`. The Supabase publishable key in the app is public by design.

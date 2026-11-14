@@ -1,5 +1,5 @@
 // FAKE demo data, saved once per device. Every seeded record is marked synced: true,
-// because every device makes the same demo data itself (it is never sent to the server).
+// because every device makes the same demo data itself (it is never sent to Supabase).
 // Maya (a1) starts with no check-ins so her garden bed starts empty.
 import { db, dayKey, daysAgo, seededRandom, seedOnce } from './db'
 import { seal } from './secure'

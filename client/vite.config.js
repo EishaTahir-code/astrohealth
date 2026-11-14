@@ -11,11 +11,5 @@ export default defineConfig({
     // (that once made an older copy of the app appear instead of the new one).
     port: 5173,
     strictPort: true,
-    // Any request to /api goes to our backend, so the browser never needs the AI key.
-    proxy: { '/api': 'http://127.0.0.1:3001' },
-  },
-  // "npm run preview" (the built app) uses the same backend.
-  preview: {
-    proxy: { '/api': 'http://127.0.0.1:3001' },
   },
 })

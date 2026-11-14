@@ -366,6 +366,32 @@ img { max-width: 100%; }
 .role-switch label:has(input:checked) { background: var(--lime); color: var(--accent-ink); }
 .role-switch label:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 3px; }
 
+/* Sign in / Create account switch (underlined tabs, quieter than the role switch above it) */
+.mode-tabs { display: flex; gap: 1.4rem; margin: 1.4rem 0 0; border-bottom: 1px solid var(--line); }
+.mode-tabs button {
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: 0.55rem 0;
+  min-height: 44px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+}
+.mode-tabs button[aria-pressed='true'] { color: var(--bone); border-bottom-color: var(--lime); }
+.mode-tabs button:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.signin-form .alert { margin: 0.2rem 0 1rem; }
+.forgot { display: inline-flex; align-items: center; min-height: 44px; margin-top: 0.4rem; }
+
+/* Family: add someone from home */
+.add-contact { margin: 0.6rem 0 0.4rem; }
+.add-contact label { display: block; margin-bottom: 0.35rem; font-weight: 700; }
+.add-contact .row { flex-wrap: nowrap; gap: 0.5rem; }
+.add-contact input { flex: 1; min-width: 0; }
+
 .demo-hint { margin-top: 1.2rem; padding: 0.85rem 1rem; border: 1px dashed var(--line-strong); border-radius: 14px; }
 .demo-hint p { margin-bottom: 0.35rem; }
 .link-btn {
@@ -482,7 +508,7 @@ label { font-weight: 700; display: block; margin-bottom: 0.35rem; }
 .form-grid { gap: 0 1.1rem; }
 .form-actions { margin-top: 0.6rem; }
 
-input[type='text'], input[type='number'], input[type='email'], input[type='password'], input[type='search'], textarea, select {
+input:not([type]), input[type='text'], input[type='number'], input[type='email'], input[type='password'], input[type='search'], textarea, select {
   font: inherit;
   width: 100%;
   min-height: 46px;
@@ -885,7 +911,8 @@ td.num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
     background: rgba(5, 11, 20, 0.94);
   }
   .sidebar .brand { padding: 0; font-size: 1.5rem; }
-  .side-nav { order: 3; flex: 1 0 100%; flex-direction: row; gap: 0.25rem; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0.1rem 16px 0.25rem; }
+  /* position: relative keeps hidden screen-reader text inside the scrolling menu (it widened the page). */
+  .side-nav { position: relative; order: 3; flex: 1 0 100%; flex-direction: row; gap: 0.25rem; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0.1rem 16px 0.25rem; }
   .side-nav::-webkit-scrollbar { display: none; }
   .side-group { display: none; }
   .side-nav a { flex: none; padding: 0.35rem 0.75rem; min-height: 40px; }
@@ -917,6 +944,14 @@ td.num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
   .signin-panel { align-items: flex-start; padding: 1.6rem 16px 2.5rem; }
   .brand-lg { margin-bottom: 1rem; font-size: 2rem; }
   .card { padding: 1.15rem 1.1rem; }
+
+  /* Phones with a notch or rounded corners (installed app, landscape): keep clear of them. */
+  .sidebar, .signin-bar, .public-bar {
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+  .sidebar { padding-top: calc(0.7rem + env(safe-area-inset-top)); }
+  .page { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); padding-bottom: calc(3rem + env(safe-area-inset-bottom)); }
 }
 
 /* ---------- Ask the assistant (from a yellow or red status pill) ---------- */
@@ -944,9 +979,11 @@ td.num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
 .ask-pill:hover .ask-tip, .ask-pill:focus-within .ask-tip { opacity: 1; transform: none; }
 
 /* ---------- Guide (first sign-in, then from the menu) ---------- */
-.guide-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: rgba(2, 6, 12, 0.72); }
+.guide-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; grid-template-columns: minmax(0, 1fr); place-items: center; padding: 16px; background: rgba(2, 6, 12, 0.72); }
 .guide {
   width: min(480px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
   padding: 1.5rem 1.6rem 1.4rem;
   border-radius: 22px;
   border: 1px solid rgba(223, 233, 154, 0.4);

@@ -6,6 +6,7 @@
 - I'm a beginner: explain new terms in plain words.
 - Follow my coding style.
 - API keys only from `.env.health` and `.env.medication`. Never commit them or any keys.
+  (Since 14 Nov 2026 the Groq key is the Supabase Edge Function secret `GROQ_API_KEY`, as you chose. Still never committed.)
 - Ask before installing anything.
 - Branching: each task gets its own branch (e.g. `task/daily-check-in`). Commit and push as you go.
   When the task is finished and I'm happy, merge it into `main` and push. Keep old branches so I can go back.
@@ -117,6 +118,8 @@
 - [x] Add doctor-review workflow for serious concerns
 
 ## Phase 10: Testing and launch
+- [x] Accounts with sign up and password reset (Supabase)
+- [x] Works on phones: installable from a link (GitHub Pages), every screen checked at phone size
 - [x] Test offline mode and sync behavior
 - [x] Test login security and privacy rules
 - [x] Test doctor access restrictions

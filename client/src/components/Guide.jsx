@@ -20,7 +20,7 @@ const STEPS = {
     ['crew', 'Crew overview', 'Every astronaut with an overall status: stable, watch, red flag or emergency.'],
     ['alerts', 'Alerts', 'Red readings, large alertness drops and help signals arrive here. Mark each one reviewed after you follow up. The astronaut sees that you did.'],
     ['person', 'Astronaut profiles', 'Open an astronaut to see an AI summary, health trends, alertness, their alerts, your notes and the notes they chose to share, and messages.'],
-    ['log', 'Access log', 'Every profile you open is recorded, on this device and on the server.'],
+    ['log', 'Access log', 'Every profile you open is recorded, on this device and in the mission database.'],
     ['help', 'This guide', 'You can open this guide again any time from the bottom of the menu.'],
   ],
 }

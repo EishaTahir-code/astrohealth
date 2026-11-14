@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { CREW } from '../data/crew'
+import { crewPerson } from '../data/crew'
 
 // The shared crew garden: a forest garden at night with one stone-ringed bed per crew member.
 // - The garden grows with the crew. Beds keep their size (no zooming out): when there are more
@@ -23,7 +23,7 @@ const STAGE_TEXT = {
   blooming: { title: 'In full bloom', text: 'A vibrant display of fresh flowers!' },
 }
 
-const bloomOf = (id) => CREW.find((c) => c.id === id)?.bloom ?? 'blue'
+const bloomOf = (id) => crewPerson(id)?.bloom ?? 'blue'
 const TILE = 512
 
 function rng(seed) {

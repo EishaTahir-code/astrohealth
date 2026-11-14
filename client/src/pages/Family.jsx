@@ -3,15 +3,16 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { Icon } from '../components/Icons'
 import { db } from '../lib/db'
 import { unseal } from '../lib/secure'
-import { connectionPrompt, contactsFor, queueMessage, shrinkPhoto } from '../lib/family'
+import { addContact, connectionPrompt, queueMessage, shrinkPhoto, useContacts } from '../lib/family'
 import { useLink } from '../lib/connection'
 import { syncNow, useSyncStatus } from '../lib/sync'
 
 // Family Space (PRD 6.7): private messages with home. Written offline, queued on this device,
 // sent when a communication window (ground link) opens. Text and photos are encrypted on the device.
 export default function Family({ me }) {
-  const contacts = contactsFor(me)
-  const [active, setActive] = useState(contacts[0]?.id)
+  const contacts = useContacts(me)
+  const [picked, setPicked] = useState(null)
+  const active = picked ?? contacts?.[0]?.id
   const messages = useLiveQuery(() => db.family.where('userId').equals(me).sortBy('createdAt'), [me])
   const plain = useDecrypted(messages)
   const link = useLink()
@@ -24,7 +25,7 @@ export default function Family({ me }) {
     if (unread.length) db.family.bulkUpdate(unread.map((m) => ({ key: m.id, changes: { read: true } })))
   }, [messages, active])
 
-  if (!messages) return <p className="muted">Loading…</p>
+  if (!messages || !contacts) return <p className="muted">Loading…</p>
 
   const queued = messages.filter((m) => m.status === 'queued').length
   const thread = plain.filter((m) => m.contact === active)
@@ -41,7 +42,7 @@ export default function Family({ me }) {
             const unread = messages.filter((m) => m.contact === c.id && m.direction === 'in' && !m.read).length
             return (
               <li key={c.id}>
-                <button type="button" aria-pressed={active === c.id} onClick={() => setActive(c.id)}>
+                <button type="button" aria-pressed={active === c.id} onClick={() => setPicked(c.id)}>
                   <span className="avatar" aria-hidden="true">{c.name.replace(/[^A-Za-z]/g, '')[0]}</span>
                   <span className="who-text">
                     <strong>{c.name}</strong>
@@ -58,6 +59,7 @@ export default function Family({ me }) {
             )
           })}
         </ul>
+        <AddContact me={me} onAdded={(c) => setPicked(c.id)} first={!contacts.length} />
         <p className="muted small spaced">Family replies in this demo are pre-written and arrive about 20 seconds after you write.</p>
       </section>
 
@@ -96,9 +98,42 @@ export default function Family({ me }) {
           ))}
         </div>
 
-        <Composer key={active} me={me} contact={contact} />
+        {contact ? <Composer key={active} me={me} contact={contact} /> : <p className="muted">Add someone from home on the left to start writing.</p>}
       </section>
     </div>
+  )
+}
+
+// Adds a person from home to write to.
+function AddContact({ me, onAdded, first }) {
+  const [name, setName] = useState('')
+  const [open, setOpen] = useState(first)
+  if (!open) {
+    return (
+      <button type="button" className="link-btn small" onClick={() => setOpen(true)}>
+        + Add someone from home
+      </button>
+    )
+  }
+  async function add(e) {
+    e.preventDefault()
+    const c = await addContact(me, name)
+    if (c) {
+      setName('')
+      setOpen(false)
+      onAdded(c)
+    }
+  }
+  return (
+    <form className="add-contact" onSubmit={add}>
+      <label htmlFor="contact-name">{first ? 'Who would you like to write to?' : 'Add someone from home'}</label>
+      <div className="row">
+        <input id="contact-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="For example: Mum, or Sam" maxLength={60} />
+        <button className="btn small-btn" type="submit" disabled={!name.trim()}>
+          Add
+        </button>
+      </div>
+    </form>
   )
 }
 
@@ -124,7 +159,7 @@ function Composer({ me, contact }) {
     e.preventDefault()
     if (!text.trim() && !photo) return
     setBusy(true)
-    await queueMessage({ userId: me, contact: contact.id, text: text.trim(), photo })
+    await queueMessage({ userId: me, contact: contact.id, contactName: contact.name, text: text.trim(), photo })
     setText('')
     setPhoto(null)
     setBusy(false)
