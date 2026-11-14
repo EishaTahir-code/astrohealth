@@ -26,8 +26,8 @@
 
 ## Phase 2: Core app setup
 - [x] Set up project repository
-- [ ] Choose tech stack
-- [ ] Set up local database
+- [x] Choose tech stack
+- [x] Set up local database
 - [ ] Set up authentication system
 - [ ] Create astronaut login
 - [ ] Create doctor login
@@ -104,7 +104,7 @@
 - [ ] Add audit logging for doctor access
 
 ## Phase 9: The two AIs
-- [ ] Set up `.env` with `GROQ_API_KEY` (and second key if using another provider)
+- [x] Set up `.env` with `GROQ_API_KEY` (and second key if using another provider)
 - [ ] Build AI 1 (Health Trends Assistant): graph explanations
 - [ ] Add AI 1 question-and-answer chat
 - [ ] Create `medicines.json` from the approved spacecraft medicine list

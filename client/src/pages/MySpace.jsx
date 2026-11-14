@@ -1,0 +1,38 @@
+import Placeholder from '../components/Placeholder'
+import { crewName, ME } from '../data/crew'
+
+// The astronaut's personal area, split into tabs.
+const TABS = [
+  ['checkin', 'Daily check-in'],
+  ['health', 'Health'],
+  ['ai', 'Health assistant'],
+  ['meds', 'Medication'],
+  ['reaction', 'Alertness game'],
+]
+
+export default function MySpace({ tab = 'checkin' }) {
+  const pages = {
+    checkin: <Placeholder title="Daily check-in" />,
+    health: <Placeholder title="Health" />,
+    ai: <Placeholder title="Health assistant" />,
+    meds: <Placeholder title="Medication assistant" />,
+    reaction: <Placeholder title="Alertness game" />,
+  }
+
+  return (
+    <div className="page">
+      <div className="page-head">
+        <h1>My space</h1>
+        <p>Signed in as {crewName(ME)} (demo). Your entries stay private on this device.</p>
+      </div>
+      <nav className="tabs" aria-label="My space sections">
+        {TABS.map(([id, label]) => (
+          <a key={id} href={`#/me/${id}`} aria-current={tab === id ? 'page' : undefined}>
+            {label}
+          </a>
+        ))}
+      </nav>
+      {pages[tab] ?? pages.checkin}
+    </div>
+  )
+}
