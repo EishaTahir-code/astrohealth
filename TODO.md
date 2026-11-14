@@ -38,8 +38,8 @@
 - [ ] Create role-based access control
 
 ## Phase 3: Astronaut personal app
-- [ ] Build daily check-in screen
-- [ ] Add mood, stress, energy, sleep, workload inputs
+- [x] Build daily check-in screen
+- [x] Add mood, stress, energy, sleep, workload inputs
 - [ ] Build physical-health input forms
 - [ ] Add blood-pressure, heart-rate, temperature, sleep, blood-sugar tracking
 - [ ] Build trend graphs
