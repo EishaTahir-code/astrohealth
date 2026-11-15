@@ -228,6 +228,7 @@ img { max-width: 100%; }
   justify-self: start;
 }
 .signout:hover { border-color: var(--lime); }
+.signout:disabled { opacity: 0.65; cursor: progress; }
 
 .main { min-width: 0; }
 .main:focus { outline: none; }

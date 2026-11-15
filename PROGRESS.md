@@ -304,6 +304,10 @@ commit `c839d1e`; the version before it is `ff0f5a2`.
 - Network drops during `npm install` earlier in the project: fixed by retrying.
 - Supabase reports a refused sign-up as a "server error", which looked like "no internet": the form now checks the
   invite code first, so it can say exactly what is wrong.
+- Signing out a second after saving something (for example switching from astronaut to flight surgeon on one
+  laptop) could leave the last record stuck on the device: the upload was refused because the person had just
+  signed out, and the app took that as a permanent refusal. Now Sign out first sends what is waiting (up to
+  5 seconds, the button shows "Saving…"), and a refusal that arrives after signing out is retried later.
 
 ## Project layout
 

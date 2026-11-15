@@ -4,7 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { Icon, Logo } from './Icons'
 import { login, logout, ROLE_LABEL, useCloudReady } from '../lib/auth'
 import { useLink } from '../lib/connection'
-import { startAutoSync, stopAutoSync, syncNow, useSyncStatus } from '../lib/sync'
+import { finishBeforeSignOut, startAutoSync, stopAutoSync, syncNow, useSyncStatus } from '../lib/sync'
 import { db, getSetting, setSetting } from '../lib/db'
 import { useCrew } from '../data/crew'
 
@@ -194,9 +194,7 @@ export default function AppShell({ user, active, children }) {
               {cloud === false ? ', signed in offline' : ''}
             </span>
           </div>
-          <button type="button" className="signout" onClick={() => { logout(); window.location.hash = '#/' }}>
-            <Icon name="signout" size={18} /> <span className="signout-text">Sign out</span>
-          </button>
+          <SignOutButton />
         </div>
       </aside>
       <main id="main" className="main" tabIndex={-1}>
@@ -209,6 +207,22 @@ export default function AppShell({ user, active, children }) {
 }
 
 // Layout for the crew garden when nobody is signed in (the PRD says it needs no login).
+// Sign out: first sends anything still waiting (a few seconds at most), then signs out.
+function SignOutButton() {
+  const [leaving, setLeaving] = useState(false)
+  const signOut = async () => {
+    setLeaving(true)
+    await finishBeforeSignOut()
+    logout()
+    window.location.hash = '#/'
+  }
+  return (
+    <button type="button" className="signout" onClick={signOut} disabled={leaving} aria-busy={leaving}>
+      <Icon name="signout" size={18} /> <span className="signout-text">{leaving ? 'Saving…' : 'Sign out'}</span>
+    </button>
+  )
+}
+
 export function PublicShell({ children }) {
   return (
     <div className="public">

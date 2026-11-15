@@ -92,9 +92,48 @@ async function doSync() {
     set({ phase: 'done', lastSyncAt: Date.now(), message: '', newItems })
     if (newItems) notify(newItems)
   } catch (err) {
+    // Signed out while this sync was running: stop quietly; nothing is lost, it is sent next time.
+    if (err === SIGNED_OUT) return set({ phase: 'idle', message: '' })
     console.warn('Sync failed', err)
     set({ phase: 'error', message: 'Sync did not finish. It will try again shortly.' })
   }
+}
+
+// Thrown when the person signed out (or someone else signed in) during a sync.
+const SIGNED_OUT = new Error('Signed out during sync')
+
+// Is the person this sync started for still the one signed in, online too?
+// A refusal that arrives after they signed out is not a real refusal: the record is kept and sent later.
+async function stillSignedIn(user) {
+  const now = currentUser()
+  if (!now || now.email !== user.email) return false
+  const { data } = await supabase.auth.getSession()
+  return (data.session?.user?.email ?? '').toLowerCase() === user.email
+}
+
+// Does this person have anything on this device that still has to be sent?
+async function hasUnsent(user) {
+  for (const table of TABLES[user.role] ?? []) {
+    if (await db[table].filter((r) => shouldSend(user, table, r)).count()) return true
+  }
+  if (user.role !== 'astronaut') return false
+  return (await db.family.where('userId').equals(user.crewId).filter((m) => m.status === 'queued').count()) > 0
+}
+
+// Call before signing out. Sends what is still waiting (for up to 5 seconds) so the next person
+// who signs in on this device does not start with someone else's unsent changes.
+// Anything that does not make it stays safely on this device and is sent at the next sign-in.
+export async function finishBeforeSignOut(maxMs = 5000) {
+  stopAutoSync()
+  clearTimeout(soon)
+  again = false
+  const user = currentUser()
+  const flush = async () => {
+    if (running) await running
+    again = false
+    if (user && (await hasUnsent(user))) await syncNow()
+  }
+  await Promise.race([flush().catch(() => {}), new Promise((resolve) => setTimeout(resolve, maxMs))])
 }
 
 // A local record in the shape Supabase stores: who it is about (crew_id) and the record itself (data).
@@ -119,6 +158,7 @@ async function pushRecords(user) {
       for (const r of rows) {
         const { data, error } = await supabase.rpc('review_alert', { alert_uid: r.uid, is_reviewed: Boolean(r.reviewed), note: r.reviewNote ?? '' })
         if (error && !isRuleError(error)) throw error
+        if (error && !(await stillSignedIn(user))) throw SIGNED_OUT
         // No such alert online (for example sample-crew data that only exists on this device): keep it here.
         if (error || !data) await markSent(table, r.uid, true)
         else await upsertByUid(table, { ...data, synced: true, reviewPending: false })
@@ -133,10 +173,12 @@ async function pushRecords(user) {
       continue
     }
     if (!isRuleError(error)) throw error
+    if (!(await stillSignedIn(user))) throw SIGNED_OUT
     // Something in the batch was refused: send one by one and keep refused ones on this device.
     for (const row of batch) {
       const one = await supabase.from('records').upsert(row, { onConflict: 'uid' })
       if (one.error && !isRuleError(one.error)) throw one.error
+      if (one.error && !(await stillSignedIn(user))) throw SIGNED_OUT
       await markSent(table, row.uid, Boolean(one.error))
     }
   }
