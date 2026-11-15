@@ -10,7 +10,7 @@ const STEPS = {
     ['checkin', 'Daily check-in', 'Five quick questions about how you feel. Your answers stay private on this device, and each check-in helps your garden bed grow.'],
     ['health', 'Health and the assistant', 'Add measurements and see the normal range for each one. Click any yellow or red status and the health assistant explains it in plain words.'],
     ['meds', 'Medical kit', 'Search every medicine in the station’s kit by name or symptom. Some are for crew self-care, others only when the flight surgeon says so.'],
-    ['help', 'Get medical help', 'The red button at the top of the menu sends a help signal to the flight surgeon straight away, or as soon as the link opens.'],
+    ['help', 'Get medical help', 'The red button (top of the menu, or the bottom of the screen on a phone) sends a help signal to the flight surgeon straight away, or as soon as the link opens.'],
     ['family', 'Family and greenhouse', 'Write to family any time: messages wait safely until the ground link opens. In the greenhouse, grow real ISS crops with a daily checklist.'],
     ['garden', 'Crew garden', 'Everyone’s flower bed in one garden. Hover a bed to see how it is doing. You can pause support alerts about yourself in Settings.'],
     ['settings', 'Privacy and this guide', 'Settings shows exactly what is shared and with whom. You can open this guide again from the bottom of the menu.'],

@@ -110,11 +110,10 @@ export default function AppShell({ user, active, children }) {
     const bar = barRef.current
     const current = bar?.querySelector('.side-nav [aria-current="page"]')
     if (!current || !window.matchMedia('(max-width: 920px)').matches) return
-    // Keep it clear of the pinned "Medical help" button on the left and of the right edge.
+    // Keep it clear of both edges.
     const barBox = bar.getBoundingClientRect()
     const item = current.getBoundingClientRect()
-    const help = bar.querySelector('.help-btn')?.getBoundingClientRect()
-    const leftLimit = (help ? help.right : barBox.left) + 12
+    const leftLimit = barBox.left + 12
     if (item.left < leftLimit) bar.scrollLeft -= leftLimit - item.left
     else if (item.right > barBox.right - 16) bar.scrollLeft += item.right - (barBox.right - 16)
   }, [active])
@@ -138,8 +137,11 @@ export default function AppShell({ user, active, children }) {
     setSetting(`guideSeen:${user.email}`, true)
   }
 
+  // On phones the medical help button sits in its own bar at the bottom of the screen.
+  const dock = user.role === 'astronaut' && active !== 'help'
+
   return (
-    <div className="shell">
+    <div className={`shell${dock ? ' has-dock' : ''}`}>
       <a className="skip-link" href="#main">Skip to content</a>
       <aside className="sidebar" ref={barRef}>
         <a className="brand" href={user.role === 'doctor' ? '#/doctor' : '#/me'}>
@@ -147,8 +149,7 @@ export default function AppShell({ user, active, children }) {
         </a>
         {user.role === 'astronaut' && (
           <a className="help-btn" href="#/me/help">
-            <Icon name="help" size={20} /> <span className="help-long">Get medical help</span>
-            <span className="help-short">Medical help</span>
+            <Icon name="help" size={20} /> Get medical help
           </a>
         )}
         <nav className="side-nav" aria-label="Main">
@@ -201,6 +202,13 @@ export default function AppShell({ user, active, children }) {
         <LinkBanners user={user} />
         {children}
       </main>
+      {dock && (
+        <div className="help-dock">
+          <a className="help-btn" href="#/me/help">
+            <Icon name="help" size={20} /> Get medical help
+          </a>
+        </div>
+      )}
       {guideOpen && <Guide role={user.role} onClose={closeGuide} />}
     </div>
   )

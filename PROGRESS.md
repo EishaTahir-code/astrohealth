@@ -14,8 +14,11 @@ Work branch: `claude/great-davinci-gccflf`. **Not merged into `main` yet.**
   switches to offline sign-in after 8 seconds. Tested on a fresh phone: open the link once, go offline, sign in,
   and the dashboard opens.
 - **Phone menu is one line.** The top bar on phones is now a single row you swipe sideways (or drag with a mouse),
-  57 pixels tall instead of about 200. "Medical help" stays pinned at the left, and the current page scrolls into
-  view. The sign-in and crew garden bars are one line too.
+  57 pixels tall instead of about 200, and the current page scrolls into view. The sign-in and crew garden bars
+  are one line too.
+- **Medical help at the bottom on phones.** On phones, "Get medical help" has its own bar fixed at the bottom of
+  the screen (easy to reach with a thumb, always visible while scrolling). It hides on the help page itself and
+  never covers the end of a page. Computers keep it at the top of the side menu.
 - **No more "demo" anywhere.** The made-up crew is now the **sample crew**:
   - Sample sign-ins: **maya.chen@orbloom.crew** (astronaut) and **dr.rivera@orbloom.crew** (flight surgeon), password
     **orbloom2026** (the same for the whole sample crew).

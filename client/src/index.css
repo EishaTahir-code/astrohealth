@@ -205,7 +205,8 @@ img { max-width: 100%; }
   text-decoration: none;
 }
 .help-btn:hover { background: rgba(255, 143, 126, 0.22); }
-.help-short { display: none; }
+/* Phones only: the medical help button in its own bar at the bottom of the screen */
+.help-dock { display: none; }
 
 .side-foot { margin-top: auto; display: grid; gap: 0.8rem; padding: 0.9rem 0.6rem 0; border-top: 1px solid var(--line); }
 .who { display: grid; line-height: 1.3; }
@@ -921,26 +922,26 @@ td.num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
   .sidebar.dragging a { pointer-events: none; }
   .sidebar > * { flex: none; }
   .sidebar .brand { padding: 0; font-size: 1.25rem; }
-  .help-long { display: none; }
-  .help-short { display: inline; }
   /* position: relative keeps hidden screen-reader text inside the scrolling menu (it widened the page). */
   .side-nav { position: relative; flex-direction: row; flex-wrap: nowrap; gap: 0.25rem; margin: 0; padding: 0; overflow: visible; }
   .side-group { display: none; }
   .side-nav a { flex: none; padding: 0.35rem 0.75rem; min-height: 40px; white-space: nowrap; }
-  /* The emergency button stays pinned at the left while the rest of the line scrolls under it. */
-  .help-btn {
-    position: sticky;
+  /* The emergency button leaves the top line and gets its own bar at the bottom of the screen,
+     always in reach of a thumb. */
+  .sidebar .help-btn { display: none; }
+  .help-dock {
+    display: block;
+    position: fixed;
     left: 0;
-    z-index: 2;
-    margin: 0;
-    min-height: 40px;
-    padding: 0 0.85rem;
-    font-size: 0.9rem;
-    white-space: nowrap;
-    background-color: #050b14;
-    background-image: linear-gradient(var(--bad-soft), var(--bad-soft));
-    box-shadow: 0 0 0 8px #050b14, -24px 0 0 8px #050b14;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    padding: 0.6rem max(16px, env(safe-area-inset-right)) calc(0.6rem + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    background: rgba(5, 11, 20, 0.96);
+    border-top: 1px solid var(--line);
   }
+  .help-dock .help-btn { width: 100%; max-width: 520px; margin: 0 auto; background-color: #1d1418; }
+  .shell.has-dock .main { padding-bottom: calc(70px + env(safe-area-inset-bottom)); }
   .side-foot { margin: 0; padding: 0; border: 0; display: flex; flex-wrap: nowrap; align-items: center; gap: 0.5rem; }
   .side-foot .foot-links { flex-wrap: nowrap; }
   .side-foot .conn { display: flex; flex-wrap: nowrap; gap: 0.2rem 0.7rem; font-size: 0.78rem; white-space: nowrap; }
