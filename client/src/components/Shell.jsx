@@ -8,7 +8,7 @@ import { finishBeforeSignOut, startAutoSync, stopAutoSync, syncNow, useSyncStatu
 import { db, getSetting, setSetting } from '../lib/db'
 import { useCrew } from '../data/crew'
 
-// [id, label, icon, href, group]
+// [id, label, icon, href, group, tag]
 const NAV = {
   astronaut: [
     ['today', 'Today', 'today', '#/me', null],
@@ -17,7 +17,7 @@ const NAV = {
     ['health', 'Health', 'health', '#/me/health', 'Health'],
     ['meds', 'Medical kit', 'meds', '#/me/meds', 'Health'],
     ['care', 'Flight surgeon', 'care', '#/me/care', 'Health'],
-    ['family', 'Family', 'family', '#/me/family', 'Life on board'],
+    ['family', 'Family', 'family', '#/me/family', 'Life on board', 'Beta'],
     ['greenhouse', 'Greenhouse', 'greenhouse', '#/me/greenhouse', 'Life on board'],
     ['garden', 'Crew garden', 'garden', '#/garden', 'Life on board'],
   ],
@@ -153,7 +153,7 @@ export default function AppShell({ user, active, children }) {
           </a>
         )}
         <nav className="side-nav" aria-label="Main">
-          {items.map(([id, label, icon, href, group], i) => {
+          {items.map(([id, label, icon, href, group, tag], i) => {
             const showGroup = group && group !== items[i - 1]?.[4]
             const badge = badges[id]
             return [
@@ -165,6 +165,7 @@ export default function AppShell({ user, active, children }) {
               <a key={id} href={href} aria-current={active === id ? 'page' : undefined}>
                 <Icon name={icon} />
                 <span>{label}</span>
+                {tag && <span className="nav-tag">{tag}</span>}
                 {badge > 0 && (
                   <span className="nav-badge">
                     {badge}
