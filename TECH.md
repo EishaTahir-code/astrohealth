@@ -10,12 +10,12 @@
 | Online database | Supabase PostgreSQL: `profiles`, `records` (all shareable health records), `family_messages`; privacy rules with Row Level Security (`supabase/migrations/`) |
 | Authentication | Supabase Auth: email + password sign up, sign in, password reset (PKCE link). Role and crew id live in `profiles`, set by a database trigger; flight surgeons need an invite code (bcrypt hash in a private table). Offline sign-in with PBKDF2 verifiers saved on the device after an online sign-in (`client/src/lib/auth.js`) |
 | Sync | Every 30 s and right after changes: upsert of this device's unsent shareable records, then "what changed since seq N"; alert reviews through the `review_alert` database function (`client/src/lib/sync.js`) |
-| Family messages | Queued on the device, sent to `family_messages` when the ground link is open; a database trigger adds the demo reply, visible after 20 s |
+| Family messages | Queued on the device, sent to `family_messages` when the ground link is open; a database trigger adds an automatic reply, visible after 20 s |
 | AI | Supabase Edge Function `orbloom-ai` (Deno) calling Groq, model `openai/gpt-oss-120b` with automatic backups (see section 5) |
 | Hosting | GitHub Pages, built and published by `.github/workflows/deploy-pages.yml`; installable on phones (PWA) |
 | Graphs | Recharts; interactive crew garden drawn on an HTML canvas |
 | Notifications | Browser notifications for new messages (opt-in in Settings) |
-| Security | Supabase Auth (hashed passwords, signed tokens), Row Level Security, demo and real accounts kept apart, encrypted private data on the device, doctor access log, AI key only as a Supabase secret |
+| Security | Supabase Auth (hashed passwords, signed tokens), Row Level Security, sample and real accounts kept apart, encrypted private data on the device, doctor access log, AI key only as a Supabase secret |
 
 ## 2. System structure
 Astronaut Personal App → Local Encrypted Database → Supabase (Auth, PostgreSQL with Row Level Security, Edge Function for the AI) → Doctor Dashboard / Shared Crew Garden.
@@ -29,7 +29,7 @@ The astronaut app works fully offline. Data syncs to Supabase only during an ava
 | Flight surgeon | all shareable records of astronauts in the same world | notes, messages from themselves, access-log entries; alert reviews only through `review_alert` |
 | Signed out | nothing | nothing |
 
-"World": demo accounts (public demo passwords) and real accounts never see each other's data.
+"World": sample accounts (public sample passwords) and real accounts never see each other's data.
 Names on doctor notes and messages, the doctor's email in the access log, and record owners are filled in by the
 database, not by the device. Unknown fields are dropped.
 

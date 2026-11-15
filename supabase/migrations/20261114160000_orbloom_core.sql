@@ -3,8 +3,8 @@
 -- Plain-words summary
 -- - Everyone signs up with Supabase Auth. A "profile" row is made for each new account.
 -- - Astronauts can sign up freely. Flight surgeon (doctor) sign-up needs the secret invite code.
--- - Demo accounts (the made-up crew) and real accounts live in two separate "worlds":
---   a demo account never sees real people's data, and real people never see demo data.
+-- - Sample accounts (the made-up sample crew) and real accounts live in two separate "worlds":
+--   a sample account never sees real people's data, and real people never see sample data.
 -- - Check-ins, moods, private notes and greenhouse notes are never stored here (they stay on the device).
 
 create extension if not exists pgcrypto with schema extensions;
@@ -33,7 +33,7 @@ create table public.profiles (
   title text not null default 'Crew member' check (char_length(title) <= 60),
   flower text not null default 'var(--bone)',
   bloom text not null default 'blue',
-  demo boolean not null default false,
+  sample boolean not null default false,
   created_at timestamptz not null default now()
 );
 alter table public.profiles enable row level security;
@@ -50,28 +50,28 @@ language sql stable security definer set search_path = '' as $$
   select crew_id from public.profiles where id = (select auth.uid())
 $$;
 
-create function private.my_demo() returns boolean
+create function private.my_sample() returns boolean
 language sql stable security definer set search_path = '' as $$
-  select demo from public.profiles where id = (select auth.uid())
+  select sample from public.profiles where id = (select auth.uid())
 $$;
 
--- Is this crew id an astronaut in my world (demo or real)?
+-- Is this crew id an astronaut in my world (sample or real)?
 create function private.astronaut_in_my_world(target text) returns boolean
 language sql stable security definer set search_path = '' as $$
   select exists (
     select 1 from public.profiles p
     where p.crew_id = target and p.role = 'astronaut'
-      and p.demo = (select demo from public.profiles where id = (select auth.uid()))
+      and p.sample = (select sample from public.profiles where id = (select auth.uid()))
   )
 $$;
 
 revoke all on all functions in schema private from public, anon;
-grant execute on function private.my_role(), private.my_crew_id(), private.my_demo(), private.astronaut_in_my_world(text) to authenticated;
+grant execute on function private.my_role(), private.my_crew_id(), private.my_sample(), private.astronaut_in_my_world(text) to authenticated;
 
 -- Everyone signed in sees the names in their own world (for the crew garden and the doctor's list).
 create policy "profiles: see people in my world" on public.profiles
   for select to authenticated
-  using (demo = (select private.my_demo()) or id = (select auth.uid()));
+  using (sample = (select private.my_sample()) or id = (select auth.uid()));
 
 -- People may change only their own display name and title.
 create policy "profiles: edit my own name" on public.profiles
@@ -127,8 +127,8 @@ begin
   if display = '' then
     display := left(split_part(new.email, '@', 1), 80);
   end if;
-  select count(*) into n from public.profiles where demo = false and role = 'astronaut';
-  insert into public.profiles (id, name, role, crew_id, title, flower, bloom, demo)
+  select count(*) into n from public.profiles where sample = false and role = 'astronaut';
+  insert into public.profiles (id, name, role, crew_id, title, flower, bloom, sample)
   values (
     new.id, display, wanted,
     'u' || left(replace(new.id::text, '-', ''), 12),
@@ -158,7 +158,7 @@ create table public.records (
   kind text not null check (kind in ('readings', 'reactionTests', 'alerts', 'sharedNotes', 'careMessages', 'doctorNotes', 'crewStatus', 'auditLog')),
   crew_id text not null check (char_length(crew_id) between 1 and 40),
   author uuid not null default auth.uid() references auth.users (id) on delete cascade,
-  demo boolean not null default false,
+  sample boolean not null default false,
   data jsonb not null check (jsonb_typeof(data) = 'object' and pg_column_size(data) < 20000),
   seq bigint not null default 0,
   updated_at timestamptz not null default now()
@@ -200,13 +200,13 @@ begin
 
   if tg_op = 'INSERT' then
     new.author := (select auth.uid());
-    new.demo := coalesce(me.demo, false);
+    new.sample := coalesce(me.sample, false);
   else
     if new.kind <> old.kind or new.crew_id <> old.crew_id then
       raise exception 'Orbloom: a record cannot change owner or kind' using errcode = 'P0001';
     end if;
     new.author := old.author;
-    new.demo := old.demo;
+    new.sample := old.sample;
   end if;
 
   -- Names come from the account, not from the device.
@@ -240,7 +240,7 @@ create trigger orbloom_clean_record before insert or update on public.records
 -- readings and alertness tests, so a second device such as a phone shows them too).
 create policy "records: flight surgeons read their world" on public.records
   for select to authenticated
-  using ((select private.my_role()) = 'doctor' and demo = (select private.my_demo()));
+  using ((select private.my_role()) = 'doctor' and sample = (select private.my_sample()));
 
 create policy "records: astronauts read their own" on public.records
   for select to authenticated
@@ -252,7 +252,7 @@ create policy "records: astronauts read their own" on public.records
 
 create policy "records: everyone sees the crew garden of their world" on public.records
   for select to authenticated
-  using (kind = 'crewStatus' and demo = (select private.my_demo()));
+  using (kind = 'crewStatus' and sample = (select private.my_sample()));
 
 -- Who may write what.
 create policy "records: astronauts add their own" on public.records
@@ -291,7 +291,7 @@ revoke all on public.records from anon, authenticated;
 grant select, insert, update on public.records to authenticated;
 
 -- A flight surgeon marks an alert as reviewed (or not). Returns the updated alert, or null if
--- the alert is not in the database (for example demo data that only exists on one device).
+-- the alert is not in the database (for example sample data that only exists on one device).
 create function public.review_alert(alert_uid text, is_reviewed boolean default true, note text default '')
 returns jsonb
 language plpgsql security definer set search_path = '' as $$
@@ -303,7 +303,7 @@ begin
   if me.id is null or me.role <> 'doctor' then
     raise exception 'Orbloom: only flight surgeons can review alerts' using errcode = '42501';
   end if;
-  select * into found from public.records r where r.uid = alert_uid and r.kind = 'alerts' and r.demo = me.demo;
+  select * into found from public.records r where r.uid = alert_uid and r.kind = 'alerts' and r.sample = me.sample;
   if found.uid is null then
     return null;
   end if;
@@ -326,7 +326,7 @@ grant execute on function public.review_alert(text, boolean, text) to authentica
 -- ---------------------------------------------------------------------------
 -- Family relay (what used to be /api/family/send and /api/family/inbox)
 -- ---------------------------------------------------------------------------
--- Astronauts add "out" messages. A pre-written demo reply ("in") is added at once but only becomes
+-- Astronauts add "out" messages. An automatic reply ("in") is added at once but only becomes
 -- visible about 20 seconds later (deliver_at), like a message coming back from Earth.
 create table public.family_messages (
   uid text primary key check (char_length(uid) between 1 and 100),
@@ -336,7 +336,7 @@ create table public.family_messages (
   contact_name text not null check (char_length(contact_name) between 1 and 80),
   body text not null check (char_length(body) <= 2000),
   photo text check (photo is null or (photo like 'data:image/%' and char_length(photo) <= 600000)),
-  demo_reply boolean not null default false,
+  auto_reply boolean not null default false,
   reply_to text,
   created_at timestamptz not null default now(),
   deliver_at timestamptz not null default now()
@@ -349,14 +349,14 @@ language plpgsql security definer set search_path = '' as $$
 begin
   if new.direction = 'out' then
     new.owner := (select auth.uid());
-    new.demo_reply := false;
+    new.auto_reply := false;
     new.deliver_at := now();
   end if;
   return new;
 end;
 $$;
 
-create function private.family_demo_reply() returns trigger
+create function private.family_auto_reply() returns trigger
 language plpgsql security definer set search_path = '' as $$
 declare
   replies text[] := array[
@@ -368,19 +368,19 @@ declare
   due timestamptz := now() + interval '20 seconds';
 begin
   if new.direction = 'out' then
-    insert into public.family_messages (uid, owner, direction, contact, contact_name, body, demo_reply, reply_to, created_at, deliver_at)
+    insert into public.family_messages (uid, owner, direction, contact, contact_name, body, auto_reply, reply_to, created_at, deliver_at)
     values (gen_random_uuid()::text, new.owner, 'in', new.contact, new.contact_name,
             replies[1 + floor(random() * array_length(replies, 1))::int], true, new.uid, due, due);
   end if;
   return null;
 end;
 $$;
-revoke all on function private.family_before_insert(), private.family_demo_reply() from public, anon, authenticated;
+revoke all on function private.family_before_insert(), private.family_auto_reply() from public, anon, authenticated;
 
 create trigger orbloom_family_before_insert before insert on public.family_messages
   for each row execute function private.family_before_insert();
-create trigger orbloom_family_demo_reply after insert on public.family_messages
-  for each row execute function private.family_demo_reply();
+create trigger orbloom_family_auto_reply after insert on public.family_messages
+  for each row execute function private.family_auto_reply();
 
 create policy "family: astronauts send their own messages" on public.family_messages
   for insert to authenticated

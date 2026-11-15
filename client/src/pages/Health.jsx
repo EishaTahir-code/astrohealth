@@ -50,7 +50,7 @@ export default function Health({ me, extra }) {
       </div>
       <HealthOverview readings={readings} onAsk={askAbout} />
       <p className="disclaimer">
-        Green, yellow and red use simple demo ranges, not medical advice. The shaded bands on each graph are the
+        Green, yellow and red use simple reference ranges, not medical advice. The shaded bands on each graph are the
         normal range. This app does not replace professional medical care.
       </p>
     </div>

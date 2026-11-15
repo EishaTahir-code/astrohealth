@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Logo } from '../components/Icons'
 import { ConnectionStatus } from '../components/Shell'
 import SignInMeadow from '../components/SignInMeadow'
-import { DEMO_ACCOUNT, ROLE_LABEL, endRecovery, login, requestPasswordReset, setNewPassword, signUp, useSession } from '../lib/auth'
+import { SAMPLE_ACCOUNT, ROLE_LABEL, endRecovery, login, requestPasswordReset, setNewPassword, signUp, useSession } from '../lib/auth'
 
 const TITLES = {
   signin: 'Welcome back to the garden',
@@ -76,10 +76,10 @@ export default function SignIn({ want, recovery = false }) {
     setError('')
   }
 
-  function fillDemo() {
+  function fillSample() {
     switchMode('signin')
-    setEmail(DEMO_ACCOUNT[role].email)
-    setPassword(DEMO_ACCOUNT[role].password)
+    setEmail(SAMPLE_ACCOUNT[role].email)
+    setPassword(SAMPLE_ACCOUNT[role].password)
   }
 
   const submitLabel = {
@@ -226,15 +226,15 @@ export default function SignIn({ want, recovery = false }) {
           )}
 
           {(mode === 'signin' || mode === 'signup') && (
-            <div className="demo-hint small">
+            <div className="sample-hint small">
               <p>
-                Just looking around? Use the demo {role === 'doctor' ? 'flight surgeon' : 'astronaut'}: <strong>{DEMO_ACCOUNT[role].email}</strong>, password{' '}
-                <strong>{DEMO_ACCOUNT[role].password}</strong>.
-                {role === 'astronaut' && ' Leo, Sara and the rest of the demo crew can sign in too (leo.okafor@orbloom.demo …, same password).'} Demo
-                accounts only ever see the made-up demo crew.
+                Just looking around? Use the sample {role === 'doctor' ? 'flight surgeon' : 'astronaut'}: <strong>{SAMPLE_ACCOUNT[role].email}</strong>, password{' '}
+                <strong>{SAMPLE_ACCOUNT[role].password}</strong>.
+                {role === 'astronaut' && ' Leo, Sara and the rest of the sample crew can sign in too (leo.okafor@orbloom.crew …, same password).'} Sample
+                accounts only ever see the made-up sample crew.
               </p>
-              <button type="button" className="link-btn" onClick={fillDemo}>
-                Fill in the demo account
+              <button type="button" className="link-btn" onClick={fillSample}>
+                Fill in the sample account
               </button>
             </div>
           )}

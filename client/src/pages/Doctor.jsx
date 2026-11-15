@@ -25,7 +25,7 @@ export default function Doctor({ page, doctor }) {
   return <div className="page">{content}</div>
 }
 
-// Only records about astronauts in this doctor's crew (real sign-ups, or the demo crew for demo accounts).
+// Only records about astronauts in this doctor's crew (real sign-ups, or the sample crew for sample accounts).
 function useCrewIds() {
   const crew = useCrew()
   return crew.map((c) => c.id).join(',')
@@ -166,7 +166,7 @@ function Profile({ id, doctor }) {
           {tab === 'alerts' && <AlertList alerts={data.alerts} doctor={doctor} />}
           {tab === 'notes' && <Notes id={id} data={data} doctor={doctor} />}
           {tab === 'messages' && <Messages id={id} messages={data.messages} doctor={doctor} />}
-          <p className="disclaimer spaced">Demo thresholds and made-up data. Use clinical judgement and mission protocol.</p>
+          <p className="disclaimer spaced">Reference thresholds only. Use clinical judgement and mission protocol.</p>
         </div>
       )}
     </>
@@ -236,7 +236,7 @@ function offlineSummary(id, summary, flags, decline, status) {
   if (decline.status === 'red' || decline.status === 'yellow') lines.push(`- Alertness ${decline.latest}, usual about ${decline.baseline}.`)
   if (status?.checkins7 != null) lines.push(`- Checked in ${status.checkins7} of the last 7 days.`)
   if (lines.length === 1) lines.push('- No red flags. Latest readings are stable.')
-  lines.push('- Based on limited demo data; worth reviewing with the astronaut.')
+  lines.push('- Based on limited data; worth reviewing with the astronaut.')
   return lines.join('\n')
 }
 

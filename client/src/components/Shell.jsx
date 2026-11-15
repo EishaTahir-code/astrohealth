@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Guide from './Guide'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Icon, Logo } from './Icons'
@@ -46,7 +46,52 @@ function useBadges(user, crewIds) {
   )
 }
 
-// Signed-in layout: sidebar (top bar on phones) + page content.
+// On phones the menu is one line: swipe it sideways, or drag it with a mouse.
+function useDragScroll(ref) {
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    let start = null
+    let moved = false
+    const down = (e) => {
+      if (e.pointerType !== 'mouse' || e.button !== 0 || el.scrollWidth <= el.clientWidth) return
+      start = { x: e.clientX, left: el.scrollLeft }
+      moved = false
+    }
+    const move = (e) => {
+      if (!start) return
+      const dx = e.clientX - start.x
+      if (!moved && Math.abs(dx) < 6) return
+      moved = true
+      el.classList.add('dragging')
+      el.scrollLeft = start.left - dx
+    }
+    const up = () => {
+      start = null
+      el.classList.remove('dragging')
+    }
+    // A drag should not also open the link it started on.
+    const click = (e) => {
+      if (moved) {
+        e.preventDefault()
+        e.stopPropagation()
+        moved = false
+      }
+    }
+    el.addEventListener('pointerdown', down)
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    el.addEventListener('click', click, true)
+    return () => {
+      el.removeEventListener('pointerdown', down)
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      el.removeEventListener('click', click, true)
+    }
+  }, [ref])
+}
+
+// Signed-in layout: sidebar (one swipeable line on phones) + page content.
 export default function AppShell({ user, active, children }) {
   const crew = useCrew()
   const items =
@@ -57,6 +102,22 @@ export default function AppShell({ user, active, children }) {
   const badges = useBadges(user, crew.map((c) => c.id).join(','))
 
   const [guideOpen, setGuideOpen] = useState(false)
+  const barRef = useRef(null)
+  useDragScroll(barRef)
+
+  // On phones, bring the current page's menu item into view.
+  useEffect(() => {
+    const bar = barRef.current
+    const current = bar?.querySelector('.side-nav [aria-current="page"]')
+    if (!current || !window.matchMedia('(max-width: 920px)').matches) return
+    // Keep it clear of the pinned "Medical help" button on the left and of the right edge.
+    const barBox = bar.getBoundingClientRect()
+    const item = current.getBoundingClientRect()
+    const help = bar.querySelector('.help-btn')?.getBoundingClientRect()
+    const leftLimit = (help ? help.right : barBox.left) + 12
+    if (item.left < leftLimit) bar.scrollLeft -= leftLimit - item.left
+    else if (item.right > barBox.right - 16) bar.scrollLeft += item.right - (barBox.right - 16)
+  }, [active])
 
   // Background sync while signed in.
   useEffect(() => {
@@ -80,13 +141,14 @@ export default function AppShell({ user, active, children }) {
   return (
     <div className="shell">
       <a className="skip-link" href="#main">Skip to content</a>
-      <aside className="sidebar">
+      <aside className="sidebar" ref={barRef}>
         <a className="brand" href={user.role === 'doctor' ? '#/doctor' : '#/me'}>
           <Logo /> <span>Orbloom</span>
         </a>
         {user.role === 'astronaut' && (
           <a className="help-btn" href="#/me/help">
-            <Icon name="help" size={20} /> Get medical help
+            <Icon name="help" size={20} /> <span className="help-long">Get medical help</span>
+            <span className="help-short">Medical help</span>
           </a>
         )}
         <nav className="side-nav" aria-label="Main">
@@ -128,7 +190,7 @@ export default function AppShell({ user, active, children }) {
             <span className="who-name">{user.name}</span>
             <span className="who-role">
               {ROLE_LABEL[user.role]}
-              {user.demo ? ' (demo)' : ''}
+              {user.sample ? ', sample crew' : ''}
               {cloud === false ? ', signed in offline' : ''}
             </span>
           </div>

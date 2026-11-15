@@ -204,7 +204,7 @@ export default function Today({ user }) {
       </div>
 
       <p className="disclaimer">
-        Demo app with made-up crew data. It gives general information only and does not replace professional medical care.
+        Orbloom gives general information only and does not replace professional medical care.
       </p>
     </div>
   )

@@ -88,7 +88,7 @@ async function doSync() {
   try {
     await pushRecords(user)
     const newItems = (await pullRecords(user)) + (user.role === 'astronaut' ? await syncFamily(user) : 0)
-    await refreshCrew(Boolean(user.demo))
+    await refreshCrew(Boolean(user.sample))
     set({ phase: 'done', lastSyncAt: Date.now(), message: '', newItems })
     if (newItems) notify(newItems)
   } catch (err) {
@@ -119,7 +119,7 @@ async function pushRecords(user) {
       for (const r of rows) {
         const { data, error } = await supabase.rpc('review_alert', { alert_uid: r.uid, is_reviewed: Boolean(r.reviewed), note: r.reviewNote ?? '' })
         if (error && !isRuleError(error)) throw error
-        // No such alert online (for example demo data that only exists on this device): keep it here.
+        // No such alert online (for example sample-crew data that only exists on this device): keep it here.
         if (error || !data) await markSent(table, r.uid, true)
         else await upsertByUid(table, { ...data, synced: true, reviewPending: false })
       }
@@ -203,7 +203,7 @@ async function syncFamily(user) {
   const from = new Date(new Date(cursor).getTime() - 120000).toISOString()
   const { data, error } = await supabase
     .from('family_messages')
-    .select('uid, contact, contact_name, body, photo, demo_reply, reply_to, deliver_at')
+    .select('uid, contact, contact_name, body, photo, auto_reply, reply_to, deliver_at')
     .eq('direction', 'in')
     .gt('deliver_at', from)
     .order('deliver_at')
@@ -224,7 +224,7 @@ async function syncFamily(user) {
       photo: m.photo ? await seal(m.photo) : null,
       status: 'received',
       read: false,
-      demo: Boolean(m.demo_reply),
+      auto: Boolean(m.auto_reply),
       createdAt: new Date(m.deliver_at).getTime(),
     })
     added++

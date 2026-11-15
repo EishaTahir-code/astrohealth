@@ -1,5 +1,5 @@
 // Reaction test scoring and alertness decline detection.
-// Simple demo rules, not a medical or fitness-for-duty test.
+// Simple rules, not a medical or fitness-for-duty test.
 
 const clamp = (n, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, n))
 

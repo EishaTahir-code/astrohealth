@@ -154,7 +154,7 @@ function Game({ me }) {
         </div>
       )}
       <p className="disclaimer spaced">
-        A simple demo test, not a medical or fitness-for-duty assessment.
+        A simple reaction test, not a medical or fitness-for-duty assessment.
       </p>
     </section>
   )

@@ -1,9 +1,10 @@
 import { Suspense, lazy, useEffect } from 'react'
 import AppShell, { PublicShell } from './components/Shell'
+import PageBoundary from './components/PageBoundary'
 import SignIn from './pages/SignIn'
 import { useRoute } from './lib/router'
 import { useRecovery, useSession } from './lib/auth'
-import { ensureDemoData } from './lib/seed'
+import { ensureSampleData } from './lib/seed'
 import { loadCrew } from './data/crew'
 
 // Pages load when first opened, so the first screen appears quickly.
@@ -23,10 +24,10 @@ export default function App() {
   const user = useSession()
   const recovering = useRecovery()
 
-  // Adds the fake crew data the first time the app opens on this device,
+  // Adds the sample crew's data the first time the app opens on this device,
   // and loads the crew list (people who signed up) saved on this device.
   useEffect(() => {
-    ensureDemoData().catch((err) => console.error('Could not add demo data', err))
+    ensureSampleData().catch((err) => console.error('Could not add the sample crew data', err))
     loadCrew()
   }, [])
 
@@ -48,9 +49,11 @@ export default function App() {
 
   if (section === 'garden') {
     const page = (
-      <Suspense fallback={loading}>
-        <Garden user={user} />
-      </Suspense>
+      <PageBoundary>
+        <Suspense fallback={loading}>
+          <Garden user={user} />
+        </Suspense>
+      </PageBoundary>
     )
     return user ? (
       <AppShell user={user} active="garden">
@@ -67,9 +70,11 @@ export default function App() {
     const tab = sub === 'ai' ? 'health' : ASTRONAUT_SECTIONS.includes(sub) ? sub : 'today'
     return (
       <AppShell user={user} active={tab}>
-        <Suspense fallback={loading}>
-          <MySpace tab={tab} user={user} extra={extra} />
-        </Suspense>
+        <PageBoundary>
+          <Suspense fallback={loading}>
+            <MySpace tab={tab} user={user} extra={extra} />
+          </Suspense>
+        </PageBoundary>
       </AppShell>
     )
   }
@@ -78,9 +83,11 @@ export default function App() {
     if (user?.role !== 'doctor') return <SignIn key="doctor" want="doctor" />
     return (
       <AppShell user={user} active={sub ?? 'crew'}>
-        <Suspense fallback={loading}>
-          <Doctor page={sub} doctor={user} />
-        </Suspense>
+        <PageBoundary>
+          <Suspense fallback={loading}>
+            <Doctor page={sub} doctor={user} />
+          </Suspense>
+        </PageBoundary>
       </AppShell>
     )
   }

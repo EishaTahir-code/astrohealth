@@ -1,14 +1,14 @@
 // The crew shown in the garden, the doctor's list and on the Today page.
 //
-// - DEMO_CREW: the made-up demo crew (these are not real people). Their accounts exist in Supabase
-//   with the password "demo1234".
+// - SAMPLE_CREW: the made-up sample crew (these are not real people). Their accounts exist in Supabase
+//   with the password "orbloom2026".
 // - Real people who sign up get a flower bed too. Their names come from Supabase (profiles) and are
 //   kept on this device, so the garden still shows them with no internet.
 // "flower" is the petal colour of their bed on the Today page; "bloom" is what grows in the crew garden.
 import { useSyncExternalStore } from 'react'
 import { getSetting, setSetting } from '../lib/db'
 
-export const DEMO_CREW = [
+export const SAMPLE_CREW = [
   { id: 'a1', name: 'Maya Chen', role: 'Commander', flower: 'var(--lime)', bloom: 'violet' },
   { id: 'a2', name: 'Leo Okafor', role: 'Flight engineer', flower: 'var(--bone)', bloom: 'blue' },
   { id: 'a3', name: 'Sara Lindqvist', role: 'Mission specialist', flower: '#9fe3dc', bloom: 'lily' },
@@ -19,32 +19,32 @@ export const DEMO_CREW = [
   { id: 'a8', name: 'Elena Petrova', role: 'Mission specialist', flower: '#b9a6ff', bloom: 'bell' },
 ]
 
-// Which crew this device shows: 'demo' (the made-up crew) or 'real' (people who signed up).
-let world = 'demo'
+// Which crew this device shows: 'sample' (the made-up crew) or 'real' (people who signed up).
+let world = 'sample'
 let realCrew = []
-let snapshot = DEMO_CREW
+let snapshot = SAMPLE_CREW
 const listeners = new Set()
 
 function emit() {
-  snapshot = world === 'real' ? realCrew : DEMO_CREW
+  snapshot = world === 'real' ? realCrew : SAMPLE_CREW
   listeners.forEach((l) => l())
 }
 
 // Loads the last known crew from this device (called once when the app starts).
 export async function loadCrew() {
   try {
-    world = await getSetting('crewWorld', 'demo')
+    world = (await getSetting('crewWorld', 'sample')) === 'real' ? 'real' : 'sample'
     realCrew = await getSetting('crew:real', [])
   } catch {
-    // keep the demo crew
+    // keep the sample crew
   }
   emit()
 }
 
 // Called after sign-in and after each sync with the astronauts from Supabase.
-export async function saveCrew(isDemo, profiles) {
-  world = isDemo ? 'demo' : 'real'
-  if (!isDemo) {
+export async function saveCrew(isSample, profiles) {
+  world = isSample ? 'sample' : 'real'
+  if (!isSample) {
     realCrew = profiles
       .filter((p) => p.role === 'astronaut')
       .map((p) => ({ id: p.crew_id, name: p.name, role: p.title || 'Crew member', flower: p.flower, bloom: p.bloom }))
@@ -55,8 +55,8 @@ export async function saveCrew(isDemo, profiles) {
 }
 
 // Switches the shown crew when someone signs in (before the first sync has finished).
-export async function setCrewWorld(isDemo) {
-  world = isDemo ? 'demo' : 'real'
+export async function setCrewWorld(isSample) {
+  world = isSample ? 'sample' : 'real'
   await setSetting('crewWorld', world)
   emit()
 }
@@ -77,7 +77,7 @@ export function useCrew() {
 }
 
 export function crewPerson(id) {
-  return snapshot.find((c) => c.id === id) ?? DEMO_CREW.find((c) => c.id === id) ?? realCrew.find((c) => c.id === id) ?? null
+  return snapshot.find((c) => c.id === id) ?? SAMPLE_CREW.find((c) => c.id === id) ?? realCrew.find((c) => c.id === id) ?? null
 }
 
 export function crewName(id) {

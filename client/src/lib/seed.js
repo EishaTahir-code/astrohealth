@@ -1,5 +1,5 @@
-// FAKE demo data, saved once per device. Every seeded record is marked synced: true,
-// because every device makes the same demo data itself (it is never sent to Supabase).
+// Made-up data for the SAMPLE CREW, saved once per device. Every seeded record is marked synced: true,
+// because every device makes the same sample data itself (it is never sent to Supabase).
 // Maya (a1) starts with no check-ins so her garden bed starts empty.
 import { db, dayKey, daysAgo, seededRandom, seedOnce } from './db'
 import { seal } from './secure'
@@ -30,7 +30,7 @@ async function seedCheckIns() {
 // 14 days of FAKE health readings for each crew member.
 //   Maya (a1): mostly stable, blood pressure slowly creeping into "needs attention".
 //   Leo  (a2): stable.
-//   Sara (a3): short sleep and a high latest blood pressure, so the demo shows red flags.
+//   Sara (a3): short sleep and a high latest blood pressure, so the sample crew shows red flags.
 async function seedReadings() {
   const rand = seededRandom(7)
   const jitter = (n) => (rand() - 0.5) * 2 * n
@@ -63,7 +63,7 @@ async function seedReadings() {
   await db.readings.bulkAdd(rows)
 }
 
-// FAKE past reaction tests. Sara's (a3) alertness drops sharply, so the demo shows a red flag.
+// FAKE past reaction tests. Sara's (a3) alertness drops sharply, so the sample crew shows a red flag.
 async function seedReactionTests() {
   const rows = []
   const plans = {
@@ -121,7 +121,7 @@ async function familyRows() {
     photo: extra.photo ? await seal(extra.photo) : null,
     status: direction === 'in' ? 'received' : 'sent',
     read: direction === 'out' || days > 1,
-    demo: true,
+    auto: true,
     createdAt: daysAgo(days).getTime() + 3600000 * (direction === 'in' ? 6 : 2),
   })
   return Promise.all([
@@ -143,7 +143,7 @@ async function seedCrewStatus() {
 }
 
 // FAKE data for the five crew members added later (Arjun, Hana, Tomás, Amara, Elena).
-// Separate seed names, so devices that already have the first demo data get these too.
+// Separate seed names, so devices that already have the first sample data get these too.
 const NEW_CREW = {
   //        sleep range  stress range  missed days      bp base   hr   sleep hours
   a4: { sleep: [3, 4], stress: [2, 3], miss: [6], bp: [121, 79], hr: 70, hours: 7 },
@@ -208,7 +208,7 @@ async function seedNewCrewStatus() {
   )
 }
 
-export async function ensureDemoData() {
+export async function ensureSampleData() {
   await seedOnce('seed:crew2:checkIns', seedNewCrewCheckIns)
   await seedOnce('seed:crew2:readings', seedNewCrewReadings)
   await seedOnce('seed:crew2:reaction', seedNewCrewReaction)

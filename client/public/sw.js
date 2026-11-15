@@ -1,11 +1,15 @@
-// Orbloom service worker: keeps a copy of the app's files so it opens with no internet.
-// - App files (scripts, styles, fonts, pictures): served from the cache, updated in the background.
+// Orbloom service worker: keeps a copy of the whole app on the device so it opens with no internet.
+// - On the first visit it saves EVERY app file (the list below is filled in by the build),
+//   so pages that were never opened online still work offline.
 // - The page itself: from the network when possible, otherwise the saved copy.
 // - Supabase requests (sign-in, sync, AI) go to another address and are never cached.
-const CACHE = 'orbloom-v2'
+const VERSION = '__VERSION__'
+const PRECACHE = '__PRECACHE__'
+const FILES = Array.isArray(PRECACHE) ? PRECACHE : ['./', './index.html', './manifest.webmanifest', './favicon.svg']
+const CACHE = `orbloom-${VERSION}`
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html', './manifest.webmanifest', './favicon.svg'])).then(() => self.skipWaiting()))
+  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()))
 })
 
 self.addEventListener('activate', (event) => {

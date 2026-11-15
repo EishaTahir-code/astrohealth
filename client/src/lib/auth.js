@@ -8,30 +8,30 @@
 //    so astronauts are never locked out. Syncing and the AI wait until the link is back.
 // 3. New people sign up here too. Flight surgeons need the invite code (checked by Supabase).
 //
-// DEMO ACCOUNTS: every password is "demo1234".
+// SAMPLE ACCOUNTS (the made-up sample crew): every password is "orbloom2026".
 import { useEffect, useState } from 'react'
 import { getSetting, setSetting } from './db'
 import { appUrl, hasCloudSession, isNetworkError, supabase } from './supabase'
 import { saveCrew, setCrewWorld } from '../data/crew'
 
-// Demo accounts can sign in offline even on a brand-new device (verifiers made with PBKDF2).
+// Sample accounts can sign in offline even on a brand-new device (verifiers made with PBKDF2).
 const ACCOUNTS = [
-  { email: 'maya.chen@orbloom.demo', name: 'Maya Chen', role: 'astronaut', crewId: 'a1', salt: '6555eb3c35cf97a973285fa15b9891a7', verifier: 'e49a42c348c253856e1d5243031c94afc2d2c493b09d07b2a3260567051a123b' },
-  { email: 'leo.okafor@orbloom.demo', name: 'Leo Okafor', role: 'astronaut', crewId: 'a2', salt: '3f2667064e64489057c53f2bb9b34d53', verifier: '037a4275eedf44cda7d67d0a87766a9942a3bd3cf01df529afa8a2d3788662c5' },
-  { email: 'sara.lindqvist@orbloom.demo', name: 'Sara Lindqvist', role: 'astronaut', crewId: 'a3', salt: '8f475f23378125f0d14ad54bdf3ef604', verifier: '20d8e8d0facd1628029f65182efe415f836f8e885e6ce6e3ce147a4816c243e5' },
-  { email: 'arjun.mehta@orbloom.demo', name: 'Arjun Mehta', role: 'astronaut', crewId: 'a4', salt: 'fb2f6f6bfff23cddbee6a477b50610aa', verifier: '91711b98abd058950fd2f849fb74d7112ad89fe60a1c84f4d8e287b2b42159a3' },
-  { email: 'hana.sato@orbloom.demo', name: 'Hana Sato', role: 'astronaut', crewId: 'a5', salt: '631dcd9c70f5c8dcbae53a0f04117558', verifier: '2e4f92811fd80e94af8dd5653ae53d3a98dc33f39c18ca9dafd8e629c60ea6a0' },
-  { email: 'tomas.alvarez@orbloom.demo', name: 'Tomás Alvarez', role: 'astronaut', crewId: 'a6', salt: '5975f38a5de64d0f57c18a709c36f47e', verifier: '8eeb3fc225c4eab9d152a058488c1b1833e16cec673d93acb6424e9e7568912d' },
-  { email: 'amara.nwosu@orbloom.demo', name: 'Amara Nwosu', role: 'astronaut', crewId: 'a7', salt: '97ba304395940f671397d6931acb74a7', verifier: 'd304a89e9deb4caba0ff25ea90e1608e3259ceb5e16d3bc464ea82df4ec2ee8b' },
-  { email: 'elena.petrova@orbloom.demo', name: 'Elena Petrova', role: 'astronaut', crewId: 'a8', salt: 'bb1f628804819dcebf3e6aad577c0f5d', verifier: '198d67d9b5e7dc9d401c570189468f5fe3abc20ff6635e02d7e273162a485f57' },
-  { email: 'dr.rivera@orbloom.demo', name: 'Dr. Ana Rivera', role: 'doctor', salt: '17412acb39e32e3d26695247a7d50034', verifier: '513da0ab2522efca5ebbbd976d74403ca6ca7af0ca7a93fc9dc4c74d6713c477' },
-  { email: 'dr.patel@orbloom.demo', name: 'Dr. Dev Patel', role: 'doctor', salt: '9fa8ec900b6c7005610bac8c1ddadbae', verifier: '741bbad6836dec94c15dba83ffd29c3d7dfcb603993100f4c93527d75185c6fb' },
+  { email: 'maya.chen@orbloom.crew', name: 'Maya Chen', role: 'astronaut', crewId: 'a1', salt: '6555eb3c35cf97a973285fa15b9891a7', verifier: '0525cd409ac64f523968143935edee301e535ff9804d9e826097e8437b2de21d' },
+  { email: 'leo.okafor@orbloom.crew', name: 'Leo Okafor', role: 'astronaut', crewId: 'a2', salt: '3f2667064e64489057c53f2bb9b34d53', verifier: '4149ddef32f3932e50d3fdbd32a3fb4b1a2cf7a9f72a0da1df2b27805c03972e' },
+  { email: 'sara.lindqvist@orbloom.crew', name: 'Sara Lindqvist', role: 'astronaut', crewId: 'a3', salt: '8f475f23378125f0d14ad54bdf3ef604', verifier: '95d890074e8fbf917a465d28bba5ec70e40b1a7659b4414a741905526a337735' },
+  { email: 'arjun.mehta@orbloom.crew', name: 'Arjun Mehta', role: 'astronaut', crewId: 'a4', salt: 'fb2f6f6bfff23cddbee6a477b50610aa', verifier: '747e267dfe1791f8cff0805c2d0d0d43a7f7a4824bce3195b49d71802cd62f52' },
+  { email: 'hana.sato@orbloom.crew', name: 'Hana Sato', role: 'astronaut', crewId: 'a5', salt: '631dcd9c70f5c8dcbae53a0f04117558', verifier: '4b4808508587a853b7c9233773b6e74be1518cc9b89a05e1746ccf96a43cacfd' },
+  { email: 'tomas.alvarez@orbloom.crew', name: 'Tomás Alvarez', role: 'astronaut', crewId: 'a6', salt: '5975f38a5de64d0f57c18a709c36f47e', verifier: 'ed324222a56351a77a5cac979861b5c18f2e4d15718b521f1c48ff1f3cd83416' },
+  { email: 'amara.nwosu@orbloom.crew', name: 'Amara Nwosu', role: 'astronaut', crewId: 'a7', salt: '97ba304395940f671397d6931acb74a7', verifier: '1c866d2922befd14315a4f3771c3a4e580fa98be5967c02593df3d6221d89039' },
+  { email: 'elena.petrova@orbloom.crew', name: 'Elena Petrova', role: 'astronaut', crewId: 'a8', salt: 'bb1f628804819dcebf3e6aad577c0f5d', verifier: '30ba930d92acdb30de92eb500e812fd7602d81f123bc00841d0b36d998ccecbb' },
+  { email: 'dr.rivera@orbloom.crew', name: 'Dr. Ana Rivera', role: 'doctor', salt: '17412acb39e32e3d26695247a7d50034', verifier: 'a492598293b1475487f5315572b3b6d2b4d2edbc14f96d795ca74034b11aa891' },
+  { email: 'dr.patel@orbloom.crew', name: 'Dr. Dev Patel', role: 'doctor', salt: '9fa8ec900b6c7005610bac8c1ddadbae', verifier: 'b0c41d66f0d2ab4a310e819c5a7beeb8ba7be23c0d88bf1d9d0b41b10705f578' },
 ]
 
 // The account suggested on the sign-in page for each role.
-export const DEMO_ACCOUNT = {
-  astronaut: { email: 'maya.chen@orbloom.demo', password: 'demo1234' },
-  doctor: { email: 'dr.rivera@orbloom.demo', password: 'demo1234' },
+export const SAMPLE_ACCOUNT = {
+  astronaut: { email: 'maya.chen@orbloom.crew', password: 'orbloom2026' },
+  doctor: { email: 'dr.rivera@orbloom.crew', password: 'orbloom2026' },
 }
 
 export const ROLE_LABEL = { astronaut: 'Astronaut', doctor: 'Flight surgeon' }
@@ -60,8 +60,8 @@ async function rememberForOffline(session, password) {
   try {
     const salt = hex(crypto.getRandomValues(new Uint8Array(16)))
     const verifier = await pbkdf2(password, salt)
-    const { email, name, role, crewId, demo } = session
-    await setSetting(`offline:${email}`, { email, name, role, crewId, demo, salt, verifier })
+    const { email, name, role, crewId, sample } = session
+    await setSetting(`offline:${email}`, { email, name, role, crewId, sample, salt, verifier })
   } catch {
     // Offline sign-in just won't be available for this account on this device.
   }
@@ -85,7 +85,7 @@ const wrongRole = (role) => `That is a ${ROLE_LABEL[role].toLowerCase()} account
 
 // Reads the signed-in person's profile and the crew of their world, then saves the app session.
 async function finishOnlineSignIn(authUser, password, role) {
-  const { data: profile, error } = await supabase.from('profiles').select('name, role, crew_id, title, demo').eq('id', authUser.id).maybeSingle()
+  const { data: profile, error } = await supabase.from('profiles').select('name, role, crew_id, title, sample').eq('id', authUser.id).maybeSingle()
   if (error || !profile) {
     await supabase.auth.signOut({ scope: 'local' }).catch(() => {})
     return { ok: false, error: isNetworkError(error) ? 'The ground link dropped while signing in. Try again.' : 'This account has no Orbloom profile yet. Try again in a minute, or sign up again.' }
@@ -100,24 +100,24 @@ async function finishOnlineSignIn(authUser, password, role) {
     role: profile.role,
     crewId: profile.role === 'astronaut' ? profile.crew_id : null,
     title: profile.title,
-    demo: profile.demo,
+    sample: profile.sample,
     online: true,
     signedInAt: Date.now(),
   }
-  await refreshCrew(profile.demo)
+  await refreshCrew(profile.sample)
   if (password) await rememberForOffline(session, password)
   store(session)
   return { ok: true, session }
 }
 
 // Updates the crew list (names for the garden and the doctor's list) from Supabase.
-export async function refreshCrew(isDemo) {
+export async function refreshCrew(isSample) {
   try {
-    const { data, error } = await supabase.from('profiles').select('name, role, crew_id, title, flower, bloom, demo').order('created_at')
+    const { data, error } = await supabase.from('profiles').select('name, role, crew_id, title, flower, bloom, sample').order('created_at')
     if (error) throw error
-    await saveCrew(isDemo, data ?? [])
+    await saveCrew(isSample, data ?? [])
   } catch {
-    await setCrewWorld(isDemo)
+    await setCrewWorld(isSample)
   }
 }
 
@@ -130,7 +130,13 @@ export async function login(email, password, role) {
   let networkDown = !navigator.onLine
   if (!networkDown) {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password })
+      // A weak or half-working connection can hang for a long time: after 8 seconds, sign in on the device instead.
+      const attempt = await Promise.race([
+        supabase.auth.signInWithPassword({ email: cleanEmail, password }),
+        new Promise((resolve) => setTimeout(() => resolve({ timedOut: true }), 8000)),
+      ])
+      if (attempt.timedOut) throw new Error('timeout')
+      const { data, error } = attempt
       if (!error && data?.user) return await finishOnlineSignIn(data.user, password, role)
       if (isNetworkError(error)) networkDown = true
       else if (error?.code === 'email_not_confirmed') return { ok: false, error: 'Please confirm your email first: open the link Supabase sent you, then sign in.' }
@@ -145,8 +151,8 @@ export async function login(email, password, role) {
   const account = await offlineAccount(cleanEmail)
   if (account && (await checkOffline(account, password))) {
     if (role && account.role !== role) return { ok: false, error: wrongRole(account.role) }
-    const session = { email: account.email, name: account.name, role: account.role, crewId: account.crewId ?? null, demo: account.demo ?? true, online: false, signedInAt: Date.now() }
-    await setCrewWorld(session.demo)
+    const session = { email: account.email, name: account.name, role: account.role, crewId: account.crewId ?? null, sample: ACCOUNTS.includes(account) || Boolean(account.sample), online: false, signedInAt: Date.now() }
+    await setCrewWorld(session.sample)
     store(session)
     return { ok: true, session }
   }
@@ -206,7 +212,7 @@ function signUpError(error) {
 export async function requestPasswordReset(email) {
   const cleanEmail = email.trim().toLowerCase()
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) return { ok: false, error: 'Please write the email address of your account.' }
-  if (cleanEmail.endsWith('@orbloom.demo')) return { ok: false, error: 'Demo accounts cannot reset their password. Their password is always demo1234.' }
+  if (cleanEmail.endsWith('@orbloom.crew')) return { ok: false, error: 'Sample accounts cannot reset their password. Their password is always orbloom2026.' }
   if (!navigator.onLine) return { ok: false, error: 'Resetting a password needs the ground link (internet).' }
   try {
     const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, { redirectTo: appUrl() })

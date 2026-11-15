@@ -5,8 +5,8 @@ import { db, getSetting, newId, setSetting } from './db'
 import { seal } from './secure'
 import { requestSync } from './sync'
 
-// FAKE family members for the demo crew. Real astronauts add the people they want to write to.
-// (Replies in this demo are pre-written and come from Supabase about 20 seconds after sending.)
+// Made-up family members for the sample crew. Real astronauts add the people they want to write to.
+// (Until families have their own app, replies are automatic and come from Supabase about 20 seconds after sending.)
 export const FAMILY = {
   a1: [
     { id: 'lin', name: 'Mum (Lin)' },
@@ -28,7 +28,7 @@ export const FAMILY = {
   a8: [{ id: 'ivan', name: 'Ivan' }, { id: 'sofia', name: 'Sofia' }],
 }
 
-// React hook: the people this astronaut can write to (demo family plus anyone they added).
+// React hook: the people this astronaut can write to (sample-crew family plus anyone they added).
 export function useContacts(crewId) {
   const added = useLiveQuery(() => getSetting(`familyContacts:${crewId}`, []), [crewId])
   if (!added) return null

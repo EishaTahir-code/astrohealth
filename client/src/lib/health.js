@@ -1,6 +1,6 @@
 // Health measurements, green/yellow/red status and red-flag detection.
 //
-// DEMO THRESHOLDS ONLY. These are simple placeholder ranges for the demo,
+// REFERENCE RANGES ONLY. These are simple general ranges,
 // not medical advice. In a real mission the flight surgeons set them.
 
 export const METRICS = {

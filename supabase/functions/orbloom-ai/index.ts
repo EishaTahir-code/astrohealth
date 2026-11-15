@@ -155,7 +155,7 @@ Rules you must always follow:
 - Never give medication instructions or doses.
 - If any reading is red, or the person describes worrying symptoms, tell them to contact the flight surgeon.
 - Never tell anyone to ignore symptoms.
-- Green = stable, yellow = needs attention, red = potentially concerning. These are demo ranges.
+- Green = stable, yellow = needs attention, red = potentially concerning. These are general reference ranges, not mission limits.
 - Keep answers under 150 words. Use short paragraphs or a short list with "-" bullets.
 - Write plain text only: no markdown, no bold, no headings, no tables.
 - Do not add a disclaimer; the app shows one.`

@@ -60,7 +60,7 @@ export default function Family({ me }) {
           })}
         </ul>
         <AddContact me={me} onAdded={(c) => setPicked(c.id)} first={!contacts.length} />
-        <p className="muted small spaced">Family replies in this demo are pre-written and arrive about 20 seconds after you write.</p>
+        <p className="muted small spaced">Until families have their own app, replies are automatic and arrive about 20 seconds after you write.</p>
       </section>
 
       <section className="card" aria-labelledby="thread-h">
@@ -92,7 +92,7 @@ export default function Family({ me }) {
               <span className="meta">
                 <span>{new Date(m.createdAt).toLocaleString(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                 {m.direction === 'out' && <span>{m.status === 'queued' ? 'Waiting for the ground link' : 'Sent'}</span>}
-                {m.demo && m.direction === 'in' && <span>Demo message</span>}
+                {m.auto && m.direction === 'in' && <span>Automatic reply</span>}
               </span>
             </div>
           ))}

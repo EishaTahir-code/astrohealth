@@ -1,7 +1,27 @@
 # Orbloom: progress
 
-Orbloom is the astronaut health app described in PRD.md. Every feature in the PRD has a working demo version,
+Orbloom is the astronaut health app described in PRD.md. Every feature in the PRD has a working version,
 tested end to end in a real browser. Steps 1 to 8 still have their own branches on GitHub (`step/1-setup` … `step/8-doctor`).
+
+## Round 5 (15 Nov 2026): offline fix, one-line phone menu, ready to submit
+
+Work branch: `claude/great-davinci-gccflf`. **Not merged into `main` yet.**
+
+- **Offline "kept loading" is fixed.** Cause: the app only saved a page for offline use after that page had been
+  opened once with internet. On a phone that had only seen the sign-in page, the dashboard was missing offline, so it
+  loaded forever. Now the first visit saves the whole app (every page, font and picture), and if a page is ever
+  missing, a clear message says what to do instead of loading forever. Signing in on a connection that hangs
+  switches to offline sign-in after 8 seconds. Tested on a fresh phone: open the link once, go offline, sign in,
+  and the dashboard opens.
+- **Phone menu is one line.** The top bar on phones is now a single row you swipe sideways (or drag with a mouse),
+  57 pixels tall instead of about 200. "Medical help" stays pinned at the left, and the current page scrolls into
+  view. The sign-in and crew garden bars are one line too.
+- **No more "demo" anywhere.** The made-up crew is now the **sample crew**:
+  - Sample sign-ins: **maya.chen@orbloom.crew** (astronaut) and **dr.rivera@orbloom.crew** (flight surgeon), password
+    **orbloom2026** (the same for the whole sample crew).
+  - App wording: "reference ranges" instead of "demo ranges", "Automatic reply" on family replies, and so on.
+  - Code, database names (`profiles.sample`, `records.sample`, `family_messages.auto_reply`), setup files and docs
+    were renamed too. The old sign-ins (@orbloom.demo, demo1234) no longer work.
 
 ## Round 4 (14 Nov 2026, night): Supabase accounts and Orbloom on phones
 
@@ -23,16 +43,16 @@ code, and phones install Orbloom from a link.
   - Flight surgeons read the crew's shareable records, and can only add notes, messages and access-log entries,
     and mark alerts reviewed. Only the review can change; nobody can change who a record belongs to.
   - Check-ins, moods, private notes, greenhouse notes and the encryption key never leave the device.
-  - **Demo accounts and real accounts are kept apart**: the demo doctor only sees the made-up crew, and real people
-    never see demo data. (The demo passwords are public, so this keeps real health data safe from them.)
+  - **Sample accounts and real accounts are kept apart**: the sample-crew flight surgeon only sees the made-up crew, and real people
+    never see sample data. (The sample passwords are public, so this keeps real health data safe from them.)
 - **The crew grows with sign-ups.** The garden, the doctor's crew list, the menu and the alerts all use the people in
   Supabase. Each new astronaut gets the next flower (violet, blue, lily, sun, pink, star, coral, bell, then again).
-- **Family** for new astronauts: "Add someone from home" (the demo crew keeps their made-up families). Messages go
-  through Supabase; the pre-written demo reply arrives about 20 seconds later.
+- **Family** for new astronauts: "Add someone from home" (the sample crew keeps their made-up families). Messages go
+  through Supabase; an automatic reply arrives about 20 seconds later (until families have their own app).
 - **The AI is a Supabase Edge Function** (`orbloom-ai`). The Groq key is a Supabase secret, never in the app.
   It checks the sign-in and the role, keeps the safety rules (red-flag symptoms skip the AI, no diagnoses), and the
   app falls back to the offline answers if anything is missing.
-- **Offline sign-in now works for every account**, not only the demo ones: after one online sign-in on a device,
+- **Offline sign-in now works for every account**, not only the sample ones: after one online sign-in on a device,
   the same email and password also work there with no internet. Syncing and the AI resume after "Reconnect".
 - **Phones**: every screen was checked at iPhone size (22 screens, no sideways scrolling) and the built app was
   tested as a phone install: it opens with no internet, signs in offline, saves, then syncs after reconnecting.
@@ -95,7 +115,7 @@ Merged into `main` on 14 Nov 2026 (commit `c839d1e`).
 | Hovering "Potentially concerning" should lead to the AI | Every yellow or red status (on Health and on Today) shows "Ask the assistant what this means" on hover; clicking asks the assistant about that exact reading. |
 | The AI gave the same answer whatever you asked | Two causes, both fixed. 1) The app was really getting pre-written answers (most likely an older copy of the server was still running, or the key was missing or refused), and it did not say why. Now a notice above the chat says exactly why (no key, example text in `.env.health`, key refused by Groq, signed in offline, older server) and how to fix it. 2) The pre-written answers now follow the question: which measurement, "is it normal", "why", "what should I do". |
 | Remove AI 2: Medication = kit list only | The Medication AI is gone (page and server route). The tab is now **Medical kit**: search the 95 medicines, crew pack or whole kit, filter by pack. Works fully offline. |
-| Garden beds should grow with the crew; drag to see other beds, no zooming out | The demo crew is now **8 astronauts** (5 new, with accounts and history). The garden is wider than the screen with beds at the same size: **drag sideways** (or swipe, use the ‹ › arrows, the name dots at the bottom, a trackpad or Shift + wheel) to explore, with a gentle glide when you let go. Tabbing to a sign brings its bed into view. Each person has their own flowers. |
+| Garden beds should grow with the crew; drag to see other beds, no zooming out | The sample crew is now **8 astronauts** (5 new, with accounts and history). The garden is wider than the screen with beds at the same size: **drag sideways** (or swipe, use the ‹ › arrows, the name dots at the bottom, a trackpad or Shift + wheel) to explore, with a gentle glide when you let go. Tabbing to a sign brings its bed into view. Each person has their own flowers. |
 | How to check the PWA / what works offline | See "Works without internet" and "Checking the offline install" below. |
 | Greenhouse crops | Lettuce, Chinese cabbage, mustard greens, kale, tomatoes, radishes and chile peppers (all real ISS crops). |
 | Flight surgeon's access log always "Waiting" | Cause: signing in while the app could not reach the server (offline sign-in) never connected syncing. Fix: a **Reconnect** bar appears at the top as soon as the server is reachable; enter your password once and everything syncs (tested: rows change from "Waiting" to "Yes"). |
@@ -143,7 +163,7 @@ Work branch: `claude/great-davinci-gccflf`, merged into `main`.
 | More accounts | Maya, Leo and Sara can each sign in and see their own data. Doctors: Dr. Rivera, Dr. Patel. |
 | Encryption | Private check-in notes, family messages and photos, and greenhouse notes are saved encrypted (AES-256) on the device. |
 | Sync | Every 30 seconds and right after a change: health readings, alertness tests, alerts, shared notes, flight-surgeon messages and the garden stage. Check-ins and private notes never leave the device. The server only accepts allowed fields and only your own records. Sync status is always shown in the sidebar. |
-| Family Space (Phase 5) | Contacts, conversations, photos (shrunk for a slow link), gentle connection prompts, encrypted on the device, queued offline and sent when the ground link opens. A "ground link" indicator shows when messages can go. Settings has a practice switch to pretend the link is down. Family replies are pre-written for the demo and arrive about 20 seconds later. |
+| Family Space (Phase 5) | Contacts, conversations, photos (shrunk for a slow link), gentle connection prompts, encrypted on the device, queued offline and sent when the ground link opens. A "ground link" indicator shows when messages can go. Settings has a practice switch to pretend the link is down. Until families have their own app, replies are automatic and arrive about 20 seconds later. |
 | Greenhouse (Phase 6) | Pick from 5 plants really grown on the ISS. Step-by-step guide, daily checklist, water level, light hours, growth stage, photos, harvest reminder and plant-health alerts. A finished checklist gives your crew garden bed +3. |
 | Emergency help | A "Get medical help" button on every astronaut screen: choose what is happening, send a red alert to the flight surgeon (queued if there is no link), clear steps to follow while waiting. |
 | Doctor alerts | Red readings, large alertness drops and emergency signals become alerts automatically. Doctors see them on an Alerts page and mark them reviewed (with a note). The astronaut sees "Reviewed by Dr. …". |
@@ -163,11 +183,11 @@ Work branch: `claude/great-davinci-gccflf`, merged into `main`.
 - New: AI summary for doctors (`/api/ai/doctor-summary`), doctor accounts only.
 
 ### Bugs found and fixed while testing
-- Demo family messages never loaded (two had the same id, so the whole batch was rejected).
+- Sample family messages never loaded (two had the same id, so the whole batch was rejected).
 - Saving the greenhouse checklist reset the form and hid the confirmation.
 - Settings switches lagged behind clicks.
 - The server could lose the last change if stopped within 50 ms of saving; it now saves at once and on shutdown.
-- A demo family reply was lost if the server restarted while it was waiting; replies are now stored.
+- An automatic family reply was lost if the server restarted while it was waiting; replies are now stored.
 - Doctors could not mark an alert as reviewed (the server wanted the astronaut id again).
 
 ## How it was tested (round 4)
@@ -177,19 +197,19 @@ Work branch: `claude/great-davinci-gccflf`, merged into `main`.
   unknown fields are dropped; a wrong invite code is refused and the code is never stored with the account.
 - Full walkthrough in a real browser against the real Supabase project, **no browser errors**: Maya signs in → check-in
   with a shared note → red blood pressure → alert → assistant (offline answers until the key is added) → medical kit →
-  family message and demo reply → link-down queue → greenhouse → help signal → message to the doctor → alertness game →
+  family message and automatic reply → link-down queue → greenhouse → help signal → message to the doctor → alertness game →
   crew garden → Dr. Rivera sees the alerts, marks the help signal reviewed, writes a note and a message, access log →
   Maya sees "Reviewed by Dr. Ana Rivera" and the reply → Leo sees the support alert for Sara.
-- New parts: create-account form checks, wrong invite code, demo password reset blocked, a real astronaut's garden shows
+- New parts: create-account form checks, wrong invite code, sample-account password reset blocked, a real astronaut's garden shows
   only real people, adding a family contact, offline sign-in for a new account (and a clear message for an account
-  that never signed in on that device), a real doctor sees only real astronauts, the demo doctor only the demo crew.
+  that never signed in on that device), a real doctor sees only real astronauts, the sample-crew flight surgeon only the sample crew.
 - Phone (iPhone 13 size): all 22 screens, astronaut and doctor, no sideways scrolling.
 - Built app served from a sub-folder like GitHub Pages, phone size: service worker active, opens offline, offline
   sign-in and saving, Reconnect, then synced.
 - `npm run lint`: no warnings. `npm run build`: passes.
 
 ## How it was tested (rounds 2 and 3)
-- Full walkthrough in a real browser (Playwright), on a clean server, with **no browser errors**: sign in (wrong password, wrong role, right one) → check-in with an encrypted note shared with the doctor → a red blood pressure reading creates a doctor alert → Health AI and Medication AI answer **live from Groq** → kit list search → family message sent, Ava's drawing shown, message queued in "link down" mode and sent when it reopens, demo reply arrives → greenhouse checklist → help signal received by the doctor → message to the doctor delivered → alertness game → crew garden (names on signs, no details until hover, Sara's card on hover) → pause support alerts → doctor: alerts banner, AI summary (live), mark reviewed, sees only the shared note (never the private one), sends a message and a note, access log → Maya sees the reply and "Reviewed by Dr. Ana Rivera" → Leo sees the support alert for Sara.
+- Full walkthrough in a real browser (Playwright), on a clean server, with **no browser errors**: sign in (wrong password, wrong role, right one) → check-in with an encrypted note shared with the doctor → a red blood pressure reading creates a doctor alert → Health AI and Medication AI answer **live from Groq** → kit list search → family message sent, Ava's drawing shown, message queued in "link down" mode and sent when it reopens, automatic reply arrives → greenhouse checklist → help signal received by the doctor → message to the doctor delivered → alertness game → crew garden (names on signs, no details until hover, Sara's card on hover) → pause support alerts → doctor: alerts banner, AI summary (live), mark reviewed, sees only the shared note (never the private one), sends a message and a note, access log → Maya sees the reply and "Reviewed by Dr. Ana Rivera" → Leo sees the support alert for Sara.
 - With the server stopped: sign-in works on the device, the Medication tab answers from the local kit list, a help signal is queued.
 - Built app: after one visit it opens with **no internet at all**.
 - Crew garden: names always visible, no card at rest, cards on bed hover, sign hover, keyboard focus and tap; Esc closes; flowers bend when the mouse sweeps through. Phone size (iPhone 13): no sideways scrolling, beds stacked.
@@ -214,10 +234,10 @@ Open **http://localhost:5173**. The first screen is the sign-in page. Stop with 
 There is no local server any more: the app talks to Supabase directly (the address and the public "publishable" key
 are in `client/src/lib/supabase.js`; that key is safe to share because the privacy rules decide what it can do).
 
-Demo accounts (all passwords **demo1234**):
-- Astronauts: **maya.chen@orbloom.demo**, leo.okafor@orbloom.demo, sara.lindqvist@orbloom.demo, arjun.mehta@orbloom.demo,
-  hana.sato@orbloom.demo, tomas.alvarez@orbloom.demo, amara.nwosu@orbloom.demo, elena.petrova@orbloom.demo
-- Flight surgeons: **dr.rivera@orbloom.demo**, dr.patel@orbloom.demo
+Sample accounts (all passwords **orbloom2026**):
+- Astronauts: **maya.chen@orbloom.crew**, leo.okafor@orbloom.crew, sara.lindqvist@orbloom.crew, arjun.mehta@orbloom.crew,
+  hana.sato@orbloom.crew, tomas.alvarez@orbloom.crew, amara.nwosu@orbloom.crew, elena.petrova@orbloom.crew
+- Flight surgeons: **dr.rivera@orbloom.crew**, dr.patel@orbloom.crew
 
 Or make your own account with "Create account". The crew garden opens without signing in.
 
@@ -240,7 +260,7 @@ Rules:
 ## Works without internet
 
 These work 100% with no internet (everything is saved on the device first):
-sign-in (on a device where that account signed in online once; demo accounts always), Today, daily check-in, health
+sign-in (on a device where that account signed in online once; sample accounts always), Today, daily check-in, health
 measurements, graphs, normal ranges and red-flag warnings, the alertness game, the medical kit list, the greenhouse,
 the crew garden, settings, and **writing** family messages, messages to the flight surgeon and help signals (they wait
 in a queue). The Health assistant gives pre-written answers about your own readings.
@@ -273,8 +293,8 @@ commit `c839d1e`; the version before it is `ff0f5a2`.
 - **Encryption**: the key is stored on the same device as the data (the browser keeps it non-copyable). A real version should also lock it with the astronaut's passcode. Family messages are encrypted on the device and travel over HTTPS, but Supabase can read them (not end-to-end).
 - **Notifications** appear only while the app is open or in the background (no push yet).
 - **Sync** checks every 30 seconds rather than streaming live.
-- **Medicine list** comes from a 2015 NASA document (SpX-6). Check it against your mission's current approved list. Red-flag thresholds are still demo values.
-- **Not done yet (need people, not code):** user flows, wireframes, success metrics, usability testing, demo presentation (TODO.md Phase 1 and 10).
+- **Medicine list** comes from a 2015 NASA document (SpX-6). Check it against your mission's current approved list. Red-flag thresholds are general reference values, not mission limits.
+- **Not done yet (need people, not code):** user flows, wireframes, success metrics, usability testing, the final presentation (TODO.md Phase 1 and 10).
 - **Light mode**: the app is dark by design (the night garden).
 - Optional Supabase hardening: turn on "leaked password protection" (Authentication → Passwords) if your plan offers it.
 
@@ -296,12 +316,12 @@ client/                    React app (Vite)
   src/lib/                 supabase (connection), auth (sign in / sign up / reset), api (AI), sync, connection,
                            secure (encryption), alerts, support (crew garden), family, greenhouse, garden, health,
                            alertness, safety, offline answers, database, seed
-  src/data/                crew (demo crew + people who signed up), check-in questions, plants, medicines.json
+  src/data/                crew (sample crew + people who signed up), check-in questions, plants, medicines.json
   src/assets/              fonts and the sign-in artwork
   public/                  favicon, app icons, manifest, service worker (sw.js)
 supabase/migrations/       the database: tables, privacy rules, sign-up rules (already applied to the project)
 supabase/functions/        orbloom-ai: the AI as a Supabase Edge Function
-supabase/demo-accounts.sql how the demo accounts were made
+supabase/sample-accounts.sql how the sample accounts were made
 .github/workflows/         deploy-pages.yml: puts the app on GitHub Pages
 design/                    design notes and artwork made with the canvas-design skill
 .claude/skills/            canvas-design skill (installed with "npx skills add")

@@ -7,17 +7,17 @@ const TEXT = {
   bp: {
     green: 'Your blood pressure is in the stable range. Keep up your usual routine.',
     yellow: 'Your blood pressure is a little higher than the stable range. This can happen with stress, poor sleep or lots of salt. Rest, drink water and measure again later, sitting quietly for a few minutes first.',
-    red: 'Your blood pressure is outside the safe demo range. Please measure again after resting, and contact the flight surgeon so they can review it.',
+    red: 'Your blood pressure is outside the safe range. Please measure again after resting, and contact the flight surgeon so they can review it.',
   },
   heartRate: {
     green: 'Your heart rate is in the stable range.',
     yellow: 'Your heart rate is a bit outside the usual range. Exercise, caffeine, stress or poor sleep can do this. Rest for a while and measure again.',
-    red: 'Your heart rate is outside the safe demo range. Sit down, rest, and contact the flight surgeon if it stays like this.',
+    red: 'Your heart rate is outside the safe range. Sit down, rest, and contact the flight surgeon if it stays like this.',
   },
   temperature: {
-    green: 'Your body temperature is normal for the demo range.',
+    green: 'Your body temperature is in the normal range.',
     yellow: 'Your temperature is slightly off. Rest, drink fluids and check again in a few hours.',
-    red: 'Your temperature is outside the safe demo range. Rest, drink fluids and tell the flight surgeon.',
+    red: 'Your temperature is outside the safe range. Rest, drink fluids and tell the flight surgeon.',
   },
   sleep: {
     green: 'You are getting a healthy amount of sleep. Keeping a regular sleep time helps.',
@@ -27,7 +27,7 @@ const TEXT = {
   bloodSugar: {
     green: 'Your blood sugar is in the stable range.',
     yellow: 'Your blood sugar is a little outside the usual range. Meal timing affects this. Measure again at a similar time tomorrow.',
-    red: 'Your blood sugar is outside the safe demo range. Tell the flight surgeon so they can advise you.',
+    red: 'Your blood sugar is outside the safe range. Tell the flight surgeon so they can advise you.',
   },
 }
 

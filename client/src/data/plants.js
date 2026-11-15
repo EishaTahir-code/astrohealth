@@ -1,5 +1,5 @@
 // Greenhouse Reset plant library (PRD 6.8). Plants like these have really been grown on the
-// International Space Station (in the Veggie unit). Numbers are general guidance for the demo,
+// International Space Station (in the Veggie unit). Numbers are general guidance,
 // not mission procedures.
 const COMMON_MATERIALS = ['Plant pillow (seed pouch with growing medium)', 'Water syringe', 'LED grow light', 'Tweezers', 'Camera']
 

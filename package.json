@@ -2,7 +2,7 @@
   "name": "orbloom",
   "private": true,
   "version": "0.1.0",
-  "description": "Offline-first astronaut health companion (demo). Online part runs on Supabase.",
+  "description": "Offline-first astronaut health companion. Online part runs on Supabase.",
   "type": "module",
   "scripts": {
     "setup": "npm install --prefix client",

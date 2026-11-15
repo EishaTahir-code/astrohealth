@@ -4,7 +4,7 @@
 //   "non-extractable": the browser can use it, but no script can read or copy the key itself.
 // - Private text and photos (check-in notes, family messages, greenhouse notes) are saved
 //   scrambled with this key. Someone copying the database files sees only scrambled bytes.
-// - Limit (demo): the key lives on the same device as the data. A real mission would also
+// - Limit: the key lives on the same device as the data. A real mission would also
 //   protect the key with the astronaut's passcode or the device's secure hardware.
 import { db } from './db'
 

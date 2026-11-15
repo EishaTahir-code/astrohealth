@@ -2,7 +2,7 @@ import { CartesianGrid, Legend, Line, LineChart, ReferenceArea, ResponsiveContai
 import StatusPill from './StatusPill'
 import { METRICS, STATUS_LABEL, formatValue, statusOf } from '../lib/health'
 
-// One trend graph for one measurement. The shaded band is the demo "stable" range.
+// One trend graph for one measurement. The shaded band is the reference "stable" range.
 export default function TrendChart({ type, readings, onAsk }) {
   const m = METRICS[type]
   const data = readings.map((r) => ({

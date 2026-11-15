@@ -89,7 +89,7 @@ export function daysAgo(n) {
   return d
 }
 
-// Small predictable random generator so the demo data looks the same every time.
+// Small predictable random generator so the sample data looks the same every time.
 export function seededRandom(seed) {
   let s = seed
   return () => {

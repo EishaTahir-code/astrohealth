@@ -127,4 +127,4 @@
 - [x] Test reaction game, greenhouse flow, family messaging, shared garden
 - [ ] Conduct usability testing
 - [x] Fix bugs
-- [ ] Prepare demo and final presentation
+- [ ] Prepare the final presentation

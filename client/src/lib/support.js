@@ -57,7 +57,7 @@ export async function publishCrewStatus(userId) {
 }
 
 // Everyone's bed for the crew garden. Uses check-ins saved on this device when there are any
-// (the demo crew), otherwise the status each crewmate shared through sync.
+// (the sample crew), otherwise the status each crewmate shared through sync.
 export function useCrewGarden() {
   const crew = useCrew()
   return useLiveQuery(async () => {

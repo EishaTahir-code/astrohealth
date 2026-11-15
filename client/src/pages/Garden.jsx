@@ -67,7 +67,7 @@ export default function Garden({ user }) {
             ))}
           </ol>
           <p className="muted small flush">
-            Demo with made-up crew data. The garden is a gentle nudge to look out for each other, not a medical score. Anyone can pause or turn off support alerts about themselves in Settings.
+            The garden is a gentle nudge to look out for each other, not a medical score. Anyone can pause or turn off support alerts about themselves in Settings. Sample accounts show a made-up crew.
           </p>
         </section>
       </div>
